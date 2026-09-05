@@ -37,23 +37,35 @@ Starting a YouTube channel without research leads to months of making videos nob
 
 ## Features & Tool Suite
 
-### 🚀 Creator Launch & Research Tools
-- **🗺️ Channel Launch Blueprint (`blueprint_new_channel`)**: **(All-in-one)** Executes full market research for a new channel: validates demand, finds model channels (1k–300k subs), discovers proven viral outlier video topics, extracts audience questions/pain points, and generates a ready-to-record 5-video launch roadmap.
+### 🔍 Search & Discovery Engine
+- **🔎 Channel Search (`search_channels`)**: Search YouTube specifically for channels matching any niche or query, instantly enriched with live subscriber counts, total view counts, video counts, handles, and URLs in one token-efficient call.
+- **📹 Video & Playlist Search (`search_videos`)**: Search videos, channels, or playlists with filters for date (`published_after`), order (`relevance`, `viewCount`, `date`), and region codes.
 - **🎯 Multi-Niche Campaign Scouting (`scout_niche_channels`)**: Run batch discovery campaigns across multiple topics to find, filter, and rank the best creators by subscriber size, total views, or average views per video.
-- **🔥 Real-Time Trend Discovery (`get_trending_niches`)**: Tap directly into YouTube's official real-time trending chart (`chart="mostPopular"`) to surface exploding niches, rising tags, recurring keywords, and breakout creators.
-- **📊 Channel Strategy & Playbook Auditor (`audit_channel_strategy`)**: Reverse-engineer any creator's publishing cadence, title formulas, monetization funnel, and opening script hook from their top-performing video.
 - **🚀 Viral Outlier Detection (`find_viral_outliers`)**: Spot 2.5x to 10x+ breakout videos that dramatically outperform a channel's normal average to discover viral concepts.
-- **💬 Audience Sentiment & Pain-Point Mining (`analyze_audience_sentiment`)**: Mine comments for unanswered questions, viewer content requests, and recurring audience problems.
-- **⚔️ Competitor Benchmarking (`compare_channels`)**: Perform head-to-head performance comparisons across 2 to 5 rival channels.
-- **✂️ Video Chapters & Viral Shorts Extractor (`extract_shorts_clips`)**: Generate timestamped chapters and extract top 30-60s punchy Shorts clips from transcripts.
+- **🔥 Real-Time Trend Discovery (`get_trending_niches`)**: Tap directly into YouTube's official real-time trending chart (`chart="mostPopular"`) to surface exploding niches, rising tags, recurring keywords, and breakout creators.
 
-### 🛠️ Core YouTube Data Tools
-- **🔍 Search (`search_videos`)**: Query videos, channels, or playlists with relevance sorting, date filters, and region codes.
-- **📹 Video Details (`get_video_details`)**: Retrieve clean metadata (views, likes, human-formatted duration, channel info, tags) without API JSON bloat.
-- **📝 Transcripts (`get_video_transcript`)**: Fetch full video subtitles **without requiring an API key or OAuth**. Supports multi-format outputs (`text`, `timestamped`, `json`), multiple languages, and start/end time filtering.
+### 🔬 Channel Reverse Engineering Engine
+- **🧬 Deep Channel Reverse Engineering (`reverse_engineer_channel`)**: **(Flagship)** Conducts complete reverse engineering of any YouTube channel:
+  - **Algorithm Engine**: Detects whether growth is driven by Search & Browse (viral) or subscriber loyalty via view-to-subscriber ratios.
+  - **Upload Cadence & Consistency**: Calculates average days between uploads and consistency rating.
+  - **Title & Packaging Formulas**: Deconstructs high-CTR patterns (listicles, question hooks, negative framing, brackets).
+  - **Top vs Flop Analysis**: Identifies what video topics blow up vs what gets ignored.
+  - **Opening 60s Script Hook**: Transcribes and extracts the exact problem-solution hook from their best video.
+  - **Monetization Blueprint**: Detects sponsors, affiliate links, newsletters (Beehiiv/Substack), and paid communities (Skool/Discord).
+  - **Audience Flaws & Gaps**: Mines real viewer comments on their top video to find unanswered questions and complaints.
+  - **Beginner Replication Playbook**: Provides exact title frameworks and differentiation angles for a new creator to model or compete.
+- **📊 Channel Strategy & Playbook Auditor (`audit_channel_strategy`)**: Fast audit of a creator's publishing cadence, title formulas, and monetization funnel.
+- **⚔️ Competitor Benchmarking (`compare_channels`)**: Perform head-to-head performance comparisons across 2 to 5 rival channels.
+- **💬 Audience Sentiment & Pain-Point Mining (`analyze_audience_sentiment`)**: Mine comments for unanswered questions, viewer content requests, and recurring audience problems.
+- **✂️ Video Chapters & Viral Shorts Extractor (`extract_shorts_clips`)**: Generate timestamped chapters and extract top 30-60s punchy Shorts clips from transcripts.
+- **🗺️ Channel Launch Blueprint (`blueprint_new_channel`)**: All-in-one market research and 5-video launch roadmap for beginners.
+
+### 🛠️ Core Data & Transcript Tools
+- **📹 Video Details (`get_video_details`)**: Clean metadata (views, likes, human-formatted duration, channel info, tags).
+- **📝 Transcripts (`get_video_transcript`)**: Fetch full video subtitles **without requiring an API key or OAuth** in `text`, `timestamped`, or `json` formats.
 - **👤 Channel Insights (`get_channel_details`)**: Look up subscriber counts, view statistics, and upload playlists by Channel ID, `@handle`, or username.
 - **📂 Playlists (`get_playlist_items`)**: Browse items and videos within any public playlist.
-- **💬 Comments (`get_video_comments`)**: Fetch top-level comments and community discussions sorted by relevance or recency.
+- **💬 Comments (`get_video_comments`)**: Fetch top-level comments and community discussions.
 
 ### 🧠 Built-in MCP Prompts
 - **`launch_new_channel_prompt`**: End-to-end prompt that instructs the LLM to research a niche and design a 90-day launch roadmap.
@@ -214,6 +226,18 @@ Search YouTube for videos, channels, or playlists.
 
 ---
 
+### `search_channels` (Direct Channel Discovery)
+Search YouTube specifically for channels matching a niche or topic, automatically enriched with current subscriber counts, total view counts, video counts, handles, and URLs in one token-efficient call.
+
+| Parameter | Type | Default | Description |
+| :--- | :--- | :--- | :--- |
+| `query` | `string` | *required* | Channel topic, niche keywords, or creator name (e.g. `"ai automation"`, `"budget travel"`). |
+| `max_results` | `integer` | `10` | Number of channels to return (1 to 50). |
+| `order` | `string` | `"relevance"` | `"relevance"`, `"videoCount"`, `"viewCount"`, or `"rating"`. |
+| `region_code` | `string` | `None` | ISO 3166-1 alpha-2 country code (e.g. `"US"`, `"GB"`, `"CA"`). |
+
+---
+
 ### `get_video_details`
 Retrieve structured metadata for one or more video IDs.
 
@@ -285,6 +309,66 @@ Discover real-time trending topics, breakout niches, and viral videos right now 
 | `category` | `string` | `"tech"` | Niche category (`"all"`, `"tech"`, `"gaming"`, `"education"`, `"howto"`, `"entertainment"`, `"news"`, `"music"`, `"sports"`, `"comedy"`). |
 | `max_results` | `integer` | `25` | Number of trending videos to analyze (up to 50). |
 | `raw` | `boolean` | `false` | Return unparsed raw API payload if `true`. |
+
+---
+
+### `reverse_engineer_channel` (Deep Channel Reverse Engineering & Replication Playbook)
+Conducts full end-to-end reverse engineering on any YouTube channel. Deconstructs upload frequency, view-to-sub engagement ratio, best vs lowest performing video topics, title formulas, first 60s script hook, full monetization funnel, and mines real viewer comments for unmet content requests and pain points.
+
+| Parameter | Type | Default | Description |
+| :--- | :--- | :--- | :--- |
+| `channel_id_or_handle` | `string` | *required* | Channel handle (e.g. `"@mkbhd"`, `"@aliabdaal"`), channel ID (`"UC..."`), or username. |
+| `sample_videos` | `integer` | `5` | Number of recent uploads to analyze (3 to 15, default 5). |
+| `include_audience_gaps` | `boolean` | `true` | Mine top video comment section for audience complaints and video requests. |
+
+#### Example Output:
+```json
+{
+  "success": true,
+  "channel": {
+    "title": "Ali Abdaal",
+    "handle": "@aliabdaal",
+    "subscribers": 5800000,
+    "total_views": 480000000
+  },
+  "growth_and_cadence": {
+    "estimated_cadence": "Weekly (approx. 1 video per week)",
+    "avg_recent_views": 850000,
+    "view_to_sub_ratio": "14.7%",
+    "algorithm_growth_engine": "Subscriber Loyalty Driven"
+  },
+  "content_strategy_breakdown": {
+    "title_formulas": [
+      "Numbers & Listicles (e.g. '7 Tips')",
+      "Negative Framing (e.g. 'Stop Doing This')",
+      "Question Hooks"
+    ],
+    "top_performing_video": {
+      "title": "How to Study for Exams - Spaced Repetition",
+      "views": 4200000,
+      "duration": "14:22"
+    },
+    "first_60s_hook_script": "In this video, I'm going to show you the exact active recall system..."
+  },
+  "monetization_blueprint": {
+    "affiliate_links": ["https://amzn.to/...", "https://linktr.ee/..."],
+    "newsletters": ["https://aliabdaal.com/newsletter"],
+    "courses_communities": ["https://skool.com/..."],
+    "sponsor_disclosures": ["Sponsored by Notion", "Sponsored by Skillshare"]
+  },
+  "audience_unmet_needs_and_flaws": {
+    "unanswered_viewer_questions": [{"comment": "How do you do this if you have ADHD?", "like_count": 420}],
+    "viewer_content_requests": [{"comment": "Can you do an updated 2026 version for college?", "like_count": 310}]
+  },
+  "beginner_replication_playbook": {
+    "actionable_takeaways": [
+      "Model their top title structure (Numbers & Listicles).",
+      "Replicate the 60s problem-solution hook.",
+      "Target the ADHD / beginner angle that their viewers asked for in comments."
+    ]
+  }
+}
+```
 
 ---
 

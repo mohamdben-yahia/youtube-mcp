@@ -419,3 +419,107 @@ def test_blueprint_new_channel():
         assert "launch_recommendations" in blueprint
         assert len(blueprint["launch_recommendations"]["monetization_roadmap"]) == 3
 
+
+def test_search_channels():
+    client = YouTubeClient(api_key="test_key")
+
+    with patch.object(client, "search") as mock_search, \
+         patch.object(client, "get_channels_batch") as mock_batch:
+
+        mock_search.return_value = {
+            "success": True,
+            "results": [
+                {
+                    "id": "UC12345",
+                    "title": "Tech With Tim",
+                    "description": "Python coding tutorials",
+                    "url": "https://www.youtube.com/channel/UC12345",
+                }
+            ],
+        }
+
+        mock_batch.return_value = [
+            {
+                "channel_id": "UC12345",
+                "title": "Tech With Tim",
+                "custom_url": "@techwithtim",
+                "subscriber_count": 1200000,
+                "view_count": 150000000,
+                "video_count": 850,
+            }
+        ]
+
+        result = client.search_channels(query="python tutorials", max_results=5)
+        assert result["success"] is True
+        assert result["count"] == 1
+        ch = result["channels"][0]
+        assert ch["channel_title"] == "Tech With Tim"
+        assert ch["handle"] == "@techwithtim"
+        assert ch["subscribers"] == 1200000
+        assert ch["video_count"] == 850
+
+
+def test_reverse_engineer_channel():
+    client = YouTubeClient(api_key="test_key")
+
+    with patch.object(client, "audit_channel_strategy") as mock_audit, \
+         patch.object(client, "analyze_audience_sentiment") as mock_sentiment:
+
+        mock_audit.return_value = {
+            "success": True,
+            "channel": {
+                "title": "Ali Abdaal",
+                "handle": "@aliabdaal",
+                "subscribers": 5000000,
+                "total_views": 400000000,
+                "video_count": 700,
+            },
+            "strategy_audit": {
+                "sample_videos_analyzed": 5,
+                "avg_recent_views": 1500000,
+                "estimated_cadence": "Weekly",
+                "avg_days_between_uploads": 7.0,
+                "title_formulas_detected": ["Numbers & Listicles (e.g. '7 Tips', 'Top 5')"],
+                "primary_tags": ["productivity", "study"],
+                "top_performing_video": {
+                    "title": "How I Study",
+                    "views": 3000000,
+                    "duration": "12:30",
+                    "url": "https://www.youtube.com/watch?v=study123",
+                },
+                "lowest_performing_video": {
+                    "title": "My Vlog",
+                    "views": 400000,
+                    "duration": "8:00",
+                    "url": "https://www.youtube.com/watch?v=vlog123",
+                },
+                "opening_hook_first_60s": "In this video, I will show you the active recall method.",
+                "monetization_funnel": {
+                    "affiliate_links": ["https://amzn.to/example"],
+                    "newsletters": ["https://newsletter.example.com"],
+                    "courses_communities": ["https://skool.com/community"],
+                    "sponsor_disclosures": ["Sponsored by Notion"],
+                },
+            },
+            "recent_videos": [],
+        }
+
+        mock_sentiment.return_value = {
+            "success": True,
+            "top_audience_questions": [{"comment": "Can you share the flashcard app?", "like_count": 150}],
+            "viewer_content_requests": [{"comment": "Do a version for medical students!", "like_count": 220}],
+            "common_pain_points": [{"comment": "Anki is too hard to set up on Mac", "like_count": 85}],
+        }
+
+        res = client.reverse_engineer_channel(channel_id_or_handle="@aliabdaal", sample_videos=5)
+        assert res["success"] is True
+        assert res["channel"]["title"] == "Ali Abdaal"
+        assert res["growth_and_cadence"]["avg_recent_views"] == 1500000
+        assert res["growth_and_cadence"]["view_to_sub_ratio"] == "30.0%"
+        assert "content_strategy_breakdown" in res
+        assert res["content_strategy_breakdown"]["first_60s_hook_script"] == "In this video, I will show you the active recall method."
+        assert len(res["audience_unmet_needs_and_flaws"]["unanswered_viewer_questions"]) == 1
+        assert "beginner_replication_playbook" in res
+        assert len(res["beginner_replication_playbook"]["actionable_takeaways"]) == 3
+
+

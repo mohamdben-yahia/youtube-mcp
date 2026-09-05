@@ -116,6 +116,72 @@ class YouTubeClient:
         except Exception as e:
             return {"success": False, "error": str(e)}
 
+    def search_channels(
+        self,
+        query: str,
+        max_results: int = 10,
+        order: str = "relevance",
+        region_code: Optional[str] = None,
+    ) -> Dict[str, Any]:
+        """Search YouTube specifically for channels matching a niche or topic, enriched with subscriber & view metrics.
+
+        Args:
+            query: Keywords, topic, or niche (e.g. 'ai automation', 'finance beginners').
+            max_results: Number of channels to return (1 to 50, default 10).
+            order: Ranking order ('relevance', 'videoCount', 'viewCount', 'rating').
+            region_code: ISO 3166-1 alpha-2 country code (e.g. 'US', 'GB').
+        """
+        try:
+            search_res = self.search(
+                query=query,
+                max_results=max_results,
+                search_type="channel",
+                order=order,
+                region_code=region_code,
+                raw=False,
+            )
+            if not search_res.get("success"):
+                return search_res
+
+            channel_items = search_res.get("results", [])
+            if not channel_items:
+                return {
+                    "success": True,
+                    "query": query,
+                    "count": 0,
+                    "channels": [],
+                }
+
+            channel_ids = [item["id"] for item in channel_items if item.get("id")]
+            batch_details = self.get_channels_batch(channel_ids)
+            details_map = {c.get("channel_id"): c for c in batch_details}
+
+            enriched_channels = []
+            for item in channel_items:
+                cid = item.get("id")
+                info = details_map.get(cid, {})
+                enriched_channels.append({
+                    "channel_id": cid,
+                    "channel_title": item.get("title") or info.get("title"),
+                    "handle": info.get("custom_url"),
+                    "description": item.get("description") or info.get("description"),
+                    "subscribers": info.get("subscriber_count", 0),
+                    "total_views": info.get("view_count", 0),
+                    "video_count": info.get("video_count", 0),
+                    "url": item.get("url") or info.get("url"),
+                })
+
+            return {
+                "success": True,
+                "query": query,
+                "count": len(enriched_channels),
+                "channels": enriched_channels,
+            }
+        except HttpError as e:
+            return self._handle_http_error(e)
+        except Exception as e:
+            return {"success": False, "error": str(e)}
+
     def get_video_details(
         self,
         video_ids: List[str],
@@ -767,6 +833,106 @@ class YouTubeClient:
                 ],
             }
 
+        except HttpError as e:
+            return self._handle_http_error(e)
+        except Exception as e:
+            return {"success": False, "error": str(e)}
+
+    def reverse_engineer_channel(
+        self,
+        channel_id_or_handle: str,
+        sample_videos: int = 5,
+        include_audience_gaps: bool = True,
+    ) -> Dict[str, Any]:
+        """Perform full end-to-end reverse engineering on any YouTube channel.
+
+        Deconstructs the creator's upload frequency, view-to-sub engagement ratio,
+        best vs lowest performing video topics, title formulas, first 60s script hook,
+        monetization funnel, and audience feedback gaps from real comments.
+        Outputs an actionable replication playbook for new creators to model or compete.
+
+        Args:
+            channel_id_or_handle: Channel handle (e.g. '@mkbhd', '@aliabdaal'), channel ID ('UC...'), or username.
+            sample_videos: Number of recent uploads to analyze (3 to 15, default 5).
+            include_audience_gaps: If True, mines the comment section of their top video for unmet viewer needs.
+        """
+        try:
+            audit_res = self.audit_channel_strategy(
+                channel_id_or_handle=channel_id_or_handle,
+                sample_videos=sample_videos,
+            )
+            if not audit_res.get("success"):
+                return audit_res
+
+            channel_info = audit_res.get("channel", {})
+            strategy = audit_res.get("strategy_audit", {})
+            recent_videos = audit_res.get("recent_videos", [])
+
+            # 1. View-to-Subscriber Ratio & Algorithm Distribution
+            subs = channel_info.get("subscribers") or 0
+            avg_views = strategy.get("avg_recent_views") or 0
+            ratio_val = round((avg_views / subs) * 100, 1) if subs > 0 else 0
+            ratio_str = f"{ratio_val}%" if subs > 0 else "N/A"
+
+            if ratio_val >= 50:
+                growth_engine = "Viral & Browse Feature Dominant (High organic discovery per video)"
+            elif ratio_val >= 20:
+                growth_engine = "Search & High Intent Driven (Strong evergreen baseline)"
+            else:
+                growth_engine = "Subscriber Loyalty Driven (Audience-first retention)"
+
+            # 2. Audience Gaps & Complaints from Top Performer
+            audience_gaps = {}
+            top_video = strategy.get("top_performing_video", {})
+            top_url = top_video.get("url") if top_video else None
+
+            if include_audience_gaps and top_url:
+                sentiment = self.analyze_audience_sentiment(video_id_or_url=top_url, max_comments=50)
+                if sentiment.get("success"):
+                    audience_gaps = {
+                        "unanswered_viewer_questions": sentiment.get("top_audience_questions", [])[:5],
+                        "viewer_content_requests": sentiment.get("viewer_content_requests", [])[:5],
+                        "common_pain_points_or_criticisms": sentiment.get("common_pain_points", [])[:5],
+                    }
+
+            # 3. Beginner Action Plan (How to Model or Compete)
+            title_formulas = strategy.get("title_formulas_detected", ["Problem-Solution", "How-to Guide"])
+
+            beginner_playbook = {
+                "algorithm_growth_engine": growth_engine,
+                "view_to_sub_ratio": ratio_str,
+                "target_title_formulas": title_formulas,
+                "recommended_video_length": top_video.get("duration", "8 to 12 minutes"),
+                "monetization_channels_detected": strategy.get("monetization_funnel", {}),
+                "actionable_takeaways": [
+                    f"Model their top title structure ({', '.join(title_formulas) if title_formulas else 'Curiosity Hook'}).",
+                    "Study their first 60s hook structure and replicate the problem-solution promise in your videos.",
+                    "Address the unanswered viewer questions and pain points found in their comments.",
+                ],
+            }
+
+            return {
+                "success": True,
+                "channel": channel_info,
+                "growth_and_cadence": {
+                    "estimated_cadence": strategy.get("estimated_cadence"),
+                    "avg_days_between_uploads": strategy.get("avg_days_between_uploads"),
+                    "avg_recent_views": avg_views,
+                    "view_to_sub_ratio": ratio_str,
+                    "algorithm_growth_engine": growth_engine,
+                },
+                "content_strategy_breakdown": {
+                    "title_formulas": title_formulas,
+                    "primary_tags": strategy.get("primary_tags", []),
+                    "top_performing_video": top_video,
+                    "lowest_performing_video": strategy.get("lowest_performing_video"),
+                    "first_60s_hook_script": strategy.get("opening_hook_first_60s"),
+                },
+                "monetization_blueprint": strategy.get("monetization_funnel", {}),
+                "audience_unmet_needs_and_flaws": audience_gaps,
+                "beginner_replication_playbook": beginner_playbook,
+                "recent_videos": recent_videos,
+            }
         except HttpError as e:
             return self._handle_http_error(e)
         except Exception as e:

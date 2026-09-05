@@ -62,6 +62,32 @@ def search_videos(
 
 
 @mcp.tool()
+def search_channels(
+    query: str,
+    max_results: int = 10,
+    order: str = "relevance",
+    region_code: Optional[str] = None,
+) -> Dict[str, Any]:
+    """Search YouTube specifically for channels matching a query or niche, enriched with subscribers, views, and video counts.
+
+    Ideal for creator discovery, niche research, and competitor mapping.
+
+    Args:
+        query: Topic or niche keywords (e.g. 'ai automation', 'budget travel', 'investing for beginners').
+        max_results: Number of channels to return (1 to 50, default 10).
+        order: Ranking order ('relevance', 'videoCount', 'viewCount', 'rating').
+        region_code: ISO 3166-1 alpha-2 country code (e.g. 'US', 'GB', 'CA').
+    """
+    client = get_client()
+    return client.search_channels(
+        query=query,
+        max_results=max_results,
+        order=order,
+        region_code=region_code,
+    )
+
+
+@mcp.tool()
 def get_video_details(
     video_ids: List[str],
     raw: bool = False,
@@ -263,6 +289,32 @@ def audit_channel_strategy(
     return client.audit_channel_strategy(
         channel_id_or_handle=channel_id_or_handle,
         sample_videos=sample_videos,
+    )
+
+
+@mcp.tool()
+def reverse_engineer_channel(
+    channel_id_or_handle: str,
+    sample_videos: int = 5,
+    include_audience_gaps: bool = True,
+) -> Dict[str, Any]:
+    """Perform full end-to-end reverse engineering on any YouTube channel.
+
+    Deconstructs upload cadence, view-to-sub engagement ratio, title formulas,
+    the opening 60s script hook of their top video, full monetization funnel,
+    and mines real viewer comments for unmet content requests and pain points.
+    Delivers a step-by-step replication playbook for a new creator to model or compete.
+
+    Args:
+        channel_id_or_handle: Channel handle (e.g. '@mkbhd', '@aliabdaal'), channel ID ('UC...'), or username.
+        sample_videos: Number of recent uploads to analyze (3 to 15, default 5).
+        include_audience_gaps: If True, mines the comment section of their top video for unmet viewer needs.
+    """
+    client = get_client()
+    return client.reverse_engineer_channel(
+        channel_id_or_handle=channel_id_or_handle,
+        sample_videos=sample_videos,
+        include_audience_gaps=include_audience_gaps,
     )
 
 

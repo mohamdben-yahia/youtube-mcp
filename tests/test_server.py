@@ -34,6 +34,8 @@ async def test_server_tools_registered():
         "compare_channels",
         "extract_shorts_clips",
         "blueprint_new_channel",
+        "search_channels",
+        "reverse_engineer_channel",
     }
     assert expected_tools.issubset(tool_names)
 
@@ -269,6 +271,39 @@ def test_blueprint_new_channel_tool(mock_get_client):
         niche="notion tutorials",
         target_audience="students",
         region_code="US",
+    )
+
+
+@patch("youtube_mcp.server.get_client")
+def test_search_channels_tool(mock_get_client):
+    from youtube_mcp.server import search_channels
+    mock_client = MagicMock()
+    mock_client.search_channels.return_value = {"success": True, "channels": []}
+    mock_get_client.return_value = mock_client
+
+    res = search_channels(query="ai creators", max_results=5)
+    assert res["success"] is True
+    mock_client.search_channels.assert_called_once_with(
+        query="ai creators",
+        max_results=5,
+        order="relevance",
+        region_code=None,
+    )
+
+
+@patch("youtube_mcp.server.get_client")
+def test_reverse_engineer_channel_tool(mock_get_client):
+    from youtube_mcp.server import reverse_engineer_channel
+    mock_client = MagicMock()
+    mock_client.reverse_engineer_channel.return_value = {"success": True, "channel": {}}
+    mock_get_client.return_value = mock_client
+
+    res = reverse_engineer_channel(channel_id_or_handle="@mkbhd", sample_videos=5, include_audience_gaps=True)
+    assert res["success"] is True
+    mock_client.reverse_engineer_channel.assert_called_once_with(
+        channel_id_or_handle="@mkbhd",
+        sample_videos=5,
+        include_audience_gaps=True,
     )
 
 
