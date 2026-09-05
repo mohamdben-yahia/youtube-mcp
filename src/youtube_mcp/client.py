@@ -18,6 +18,12 @@ from youtube_mcp.formatters import (
 from youtube_mcp.transcripts import fetch_transcript, extract_video_id
 from youtube_mcp.cache import get_cache, ResponseCache
 
+try:
+    from dotenv import load_dotenv
+    load_dotenv()
+except ImportError:
+    pass
+
 
 class YouTubeClient:
     """Wrapper around googleapiclient for YouTube Data API v3 with multi-key quota rotation."""
@@ -34,13 +40,14 @@ class YouTubeClient:
         if api_key:
             raw_keys.extend([k.strip() for k in api_key.split(",") if k.strip()])
 
-        env_keys = os.getenv("YOUTUBE_API_KEYS")
-        if env_keys:
-            raw_keys.extend([k.strip() for k in env_keys.split(",") if k.strip()])
+        if not raw_keys:
+            env_keys = os.getenv("YOUTUBE_API_KEYS")
+            if env_keys:
+                raw_keys.extend([k.strip() for k in env_keys.split(",") if k.strip()])
 
-        env_key = os.getenv("YOUTUBE_API_KEY")
-        if env_key:
-            raw_keys.extend([k.strip() for k in env_key.split(",") if k.strip()])
+            env_key = os.getenv("YOUTUBE_API_KEY")
+            if env_key:
+                raw_keys.extend([k.strip() for k in env_key.split(",") if k.strip()])
 
         # Deduplicate keys while preserving order
         seen = set()
