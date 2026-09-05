@@ -523,3 +523,142 @@ def test_reverse_engineer_channel():
         assert len(res["beginner_replication_playbook"]["actionable_takeaways"]) == 3
 
 
+def test_find_breakout_growth_channels():
+    client = YouTubeClient(api_key="test_key")
+
+    with patch.object(client, "search") as mock_search, \
+         patch.object(client, "get_channels_batch") as mock_batch:
+
+        mock_search.return_value = {
+            "success": True,
+            "results": [{"id": "UC_breakout"}],
+        }
+
+        mock_batch.return_value = [
+            {
+                "channel_id": "UC_breakout",
+                "title": "Modern AI Creator",
+                "custom_url": "@modernaicreator",
+                "subscriber_count": 45000,
+                "video_count": 15,
+                "view_count": 900000,
+                "published_at": "2025-01-01T00:00:00Z",
+                "url": "https://youtube.com/@modernaicreator",
+            }
+        ]
+
+        res = client.find_breakout_growth_channels(niche="ai creator", max_channel_age_months=24)
+        assert res["success"] is True
+        assert res["total_found"] == 1
+        ch = res["breakout_channels"][0]
+        assert ch["channel_name"] == "Modern AI Creator"
+        assert ch["subscribers"] == 45000
+        assert ch["subs_per_video"] == 3000
+
+
+def test_find_content_gaps():
+    client = YouTubeClient(api_key="test_key")
+
+    with patch.object(client, "search") as mock_search, \
+         patch.object(client, "get_video_details") as mock_details:
+
+        mock_search.return_value = {
+            "success": True,
+            "results": [{"id": "vid_old"}, {"id": "vid_new"}],
+        }
+
+        mock_details.return_value = {
+            "success": True,
+            "videos": [
+                {
+                    "video_id": "vid_old",
+                    "title": "SQL Tutorial for Beginners 2021",
+                    "channel_title": "Old Channel",
+                    "view_count": 500000,
+                    "published_at": "2021-01-01T00:00:00Z",
+                    "duration": "20:00",
+                    "url": "https://youtube.com/watch?v=vid_old",
+                },
+                {
+                    "video_id": "vid_new",
+                    "title": "SQL in 2026",
+                    "channel_title": "New Channel",
+                    "view_count": 10000,
+                    "published_at": "2026-08-01T00:00:00Z",
+                    "duration": "10:00",
+                    "url": "https://youtube.com/watch?v=vid_new",
+                }
+            ],
+        }
+
+        res = client.find_content_gaps(niche_or_topic="sql tutorial")
+        assert res["success"] is True
+        assert "HIGH" in res["content_gap_opportunity"]
+        assert res["outdated_ranking_videos_found"] == 1
+        assert len(res["suggested_video_titles_to_rank"]) == 3
+
+
+def test_generate_retention_script_outline():
+    client = YouTubeClient(api_key="test_key")
+
+    with patch("youtube_mcp.client.fetch_transcript") as mock_transcript, \
+         patch.object(client, "analyze_audience_sentiment") as mock_sentiment:
+
+        mock_transcript.return_value = {
+            "success": True,
+            "content": "Stop wasting time learning Python the wrong way.",
+        }
+
+        mock_sentiment.return_value = {
+            "success": True,
+            "top_audience_questions": [{"comment": "How do I install libraries on Windows?"}],
+            "common_pain_points": [{"comment": "Virtual environments are so confusing"}],
+        }
+
+        res = client.generate_retention_script_outline(
+            video_title_or_topic="How to Learn Python in 2026",
+            competitor_video_id_or_url="https://youtube.com/watch?v=abc12345678",
+            target_duration_minutes=10,
+        )
+
+        assert res["success"] is True
+        assert res["video_title"] == "How to Learn Python in 2026"
+        assert res["modeled_competitor_hook"] == "Stop wasting time learning Python the wrong way."
+        assert len(res["retention_script_outline"]) == 7
+        assert res["retention_script_outline"][0]["section"] == "The Hook (Pattern Interrupt & Promise)"
+
+
+def test_discover_niche_sponsors():
+    client = YouTubeClient(api_key="test_key")
+
+    with patch.object(client, "search") as mock_search, \
+         patch.object(client, "get_video_details") as mock_details:
+
+        mock_search.return_value = {
+            "success": True,
+            "results": [{"id": "vid_sponsored"}],
+        }
+
+        mock_details.return_value = {
+            "success": True,
+            "videos": [
+                {
+                    "video_id": "vid_sponsored",
+                    "title": "My Favorite Tech Setup",
+                    "channel_title": "Tech Reviewer",
+                    "view_count": 80000,
+                    "description": "This video is sponsored by Notion! Use code TECH for 20% off.\nCheck out my gear: https://amzn.to/example",
+                    "url": "https://youtube.com/watch?v=vid_sponsored",
+                }
+            ],
+        }
+
+        res = client.discover_niche_sponsors(niche_or_query="tech setup")
+        assert res["success"] is True
+        assert res["videos_analyzed"] == 1
+        assert res["sponsored_videos_detected"] == 1
+        assert any(b["brand"] == "Notion" for b in res["top_active_sponsors"])
+        assert len(res["creator_monetization_guidance"]) == 3
+
+
+

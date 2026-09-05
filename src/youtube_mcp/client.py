@@ -13,7 +13,7 @@ from youtube_mcp.formatters import (
     format_playlist_item,
     format_comment_thread,
 )
-from youtube_mcp.transcripts import fetch_transcript
+from youtube_mcp.transcripts import fetch_transcript, extract_video_id
 
 
 class YouTubeClient:
@@ -1392,3 +1392,400 @@ class YouTubeClient:
             return self._handle_http_error(e)
         except Exception as e:
             return {"success": False, "error": str(e)}
+
+    def find_breakout_growth_channels(
+        self,
+        niche: str,
+        max_channel_age_months: int = 24,
+        min_subscribers: int = 1000,
+        max_subscribers: int = 300000,
+        region_code: Optional[str] = "US",
+        max_results: int = 10,
+    ) -> Dict[str, Any]:
+        """Find modern breakout channels created recently that grew rapidly with high subscriber velocity.
+
+        Filters out legacy channels that grew years ago, uncovering channels that recently cracked
+        the YouTube algorithm from scratch.
+
+        Args:
+            niche: Topic or niche keyword (e.g. 'ai automation', 'finance beginners', 'coding').
+            max_channel_age_months: Maximum age in months (default 24).
+            min_subscribers: Minimum subscribers (default 1000).
+            max_subscribers: Maximum subscribers (default 300000).
+            region_code: Country code (default 'US').
+            max_results: Max breakout channels to return (default 10).
+        """
+        from datetime import datetime, timezone
+
+        try:
+            search_res = self.search(
+                query=niche,
+                max_results=min(max_results * 3, 50),
+                search_type="channel",
+                region_code=region_code,
+                raw=False,
+            )
+            if not search_res.get("success"):
+                return search_res
+
+            channel_items = search_res.get("results", [])
+            channel_ids = [item["id"] for item in channel_items if item.get("id")]
+            batch_details = self.get_channels_batch(channel_ids)
+
+            breakout_channels = []
+            now = datetime.now(timezone.utc)
+
+            for ch in batch_details:
+                subs = ch.get("subscriber_count") or 0
+                if subs < min_subscribers:
+                    continue
+                if max_subscribers and subs > max_subscribers:
+                    continue
+
+                pub_date = ch.get("published_at")
+                age_days = None
+                age_months = None
+                monthly_velocity = None
+
+                if pub_date:
+                    try:
+                        created = datetime.fromisoformat(pub_date.replace("Z", "+00:00"))
+                        age_days = max((now - created).days, 1)
+                        age_months = round(age_days / 30.4, 1)
+                        if age_months > max_channel_age_months:
+                            continue
+                        monthly_velocity = round(subs / max(age_months, 0.5))
+                    except Exception:
+                        pass
+
+                video_count = max(ch.get("video_count") or 1, 1)
+                subs_per_video = round(subs / video_count)
+
+                breakout_channels.append({
+                    "channel_name": ch.get("title"),
+                    "handle": ch.get("custom_url"),
+                    "subscribers": subs,
+                    "video_count": ch.get("video_count"),
+                    "total_views": ch.get("view_count"),
+                    "channel_age_months": age_months,
+                    "subs_gained_per_month": monthly_velocity,
+                    "subs_per_video": subs_per_video,
+                    "created_at": pub_date,
+                    "url": ch.get("url"),
+                })
+
+            breakout_channels.sort(
+                key=lambda x: x.get("subs_gained_per_month") or x.get("subs_per_video") or 0,
+                reverse=True,
+            )
+
+            return {
+                "success": True,
+                "niche": niche,
+                "total_found": len(breakout_channels),
+                "breakout_channels": breakout_channels[:max_results],
+            }
+        except HttpError as e:
+            return self._handle_http_error(e)
+        except Exception as e:
+            return {"success": False, "error": str(e)}
+
+    def find_content_gaps(
+        self,
+        niche_or_topic: str,
+        max_results: int = 15,
+        region_code: Optional[str] = "US",
+    ) -> Dict[str, Any]:
+        """Identify high-demand content gaps and low-competition keyword opportunities.
+
+        Detects top search rankings held by outdated videos (2+ years old) or small channels (<25k subs),
+        signaling easy ranking opportunities for new creators.
+
+        Args:
+            niche_or_topic: Topic, query, or question (e.g. 'how to learn sql for data analysis').
+            max_results: Number of search results to analyze (default 15).
+            region_code: Country code (default 'US').
+        """
+        from datetime import datetime, timezone
+
+        try:
+            search_res = self.search(
+                query=niche_or_topic,
+                max_results=min(max_results, 50),
+                search_type="video",
+                order="relevance",
+                region_code=region_code,
+                raw=False,
+            )
+            if not search_res.get("success"):
+                return search_res
+
+            video_items = search_res.get("results", [])
+            video_ids = [item["id"] for item in video_items if item.get("id")]
+            details_res = self.get_video_details(video_ids=video_ids)
+            videos = details_res.get("videos", []) if details_res.get("success") else []
+
+            now = datetime.now(timezone.utc)
+            outdated_videos = []
+            all_analyzed = []
+
+            for v in videos:
+                pub_date = v.get("published_at")
+                age_years = 0
+                if pub_date:
+                    try:
+                        created = datetime.fromisoformat(pub_date.replace("Z", "+00:00"))
+                        age_years = round((now - created).days / 365.25, 1)
+                    except Exception:
+                        pass
+
+                views = v.get("view_count") or 0
+                item_summary = {
+                    "video_id": v.get("video_id"),
+                    "title": v.get("title"),
+                    "channel_title": v.get("channel_title"),
+                    "views": views,
+                    "published_at": pub_date,
+                    "age_years": age_years,
+                    "duration": v.get("duration"),
+                    "url": v.get("url"),
+                }
+                all_analyzed.append(item_summary)
+
+                if age_years >= 2.0:
+                    outdated_videos.append({
+                        **item_summary,
+                        "opportunity_reason": f"Ranking is {age_years} years old. A fresh 2026 update can easily outrank it.",
+                    })
+
+            outdated_ratio = len(outdated_videos) / max(len(videos), 1)
+            if outdated_ratio >= 0.4:
+                gap_score = "HIGH (Massive opportunity: >40% of ranking videos are 2+ years old)"
+            elif outdated_ratio >= 0.2:
+                gap_score = "MODERATE (Good opportunity: Several legacy videos can be displaced)"
+            else:
+                gap_score = "COMPETITIVE (Most top videos are recently published)"
+
+            suggested_titles = [
+                f"{niche_or_topic.title()} (Complete 2026 Beginner Guide)",
+                f"How to Master {niche_or_topic.title()} in 30 Days (Step-by-Step)",
+                f"Why Most People Fail at {niche_or_topic.title()} (And What to Do Instead)",
+            ]
+
+            return {
+                "success": True,
+                "topic": niche_or_topic,
+                "content_gap_opportunity": gap_score,
+                "total_videos_analyzed": len(videos),
+                "outdated_ranking_videos_found": len(outdated_videos),
+                "outdated_videos_to_displace": outdated_videos[:5],
+                "suggested_video_titles_to_rank": suggested_titles,
+                "ranking_playbook": [
+                    "Target the exact search intent of the outdated videos with higher pacing and modern graphics.",
+                    "Include current year (2026) in title and thumbnail to signal freshness.",
+                    "Pin a comment with a free downloadable checklist or resource to boost viewer engagement signals.",
+                ],
+            }
+        except HttpError as e:
+            return self._handle_http_error(e)
+        except Exception as e:
+            return {"success": False, "error": str(e)}
+
+    def generate_retention_script_outline(
+        self,
+        video_title_or_topic: str,
+        competitor_video_id_or_url: Optional[str] = None,
+        target_audience: str = "Beginners",
+        target_duration_minutes: int = 10,
+    ) -> Dict[str, Any]:
+        """Generate a complete 8-12 minute retention-engineered YouTube script outline.
+
+        Reverse-engineers competitor transcripts for opening hooks and integrates real viewer
+        pain points from comments to maximize watch time and viewer satisfaction.
+
+        Args:
+            video_title_or_topic: The topic or title of the video to outline.
+            competitor_video_id_or_url: Optional competitor video to model hook and structure from.
+            target_audience: Ideal viewer demographic (default 'Beginners').
+            target_duration_minutes: Target video runtime in minutes (default 10).
+        """
+        try:
+            competitor_hook = None
+            viewer_objections = []
+
+            if competitor_video_id_or_url:
+                cid = extract_video_id(competitor_video_id_or_url)
+                if cid:
+                    hook_res = fetch_transcript(cid, output_format="text", end_seconds=60.0)
+                    if hook_res.get("success") and hook_res.get("content"):
+                        competitor_hook = hook_res["content"].replace("\n", " ")
+
+                    sentiment = self.analyze_audience_sentiment(video_id_or_url=cid, max_comments=30)
+                    if sentiment.get("success"):
+                        viewer_objections = [
+                            q.get("comment") for q in sentiment.get("top_audience_questions", [])[:3]
+                        ] + [
+                            p.get("comment") for p in sentiment.get("common_pain_points", [])[:2]
+                        ]
+
+            clean_topic = video_title_or_topic.strip()
+
+            script_structure = [
+                {
+                    "timestamp": "0:00 - 0:15",
+                    "section": "The Hook (Pattern Interrupt & Promise)",
+                    "objective": "Stop the scroll, state the core problem, and show the end transformation immediately. Zero channel fluff.",
+                    "verbal_script_framework": f"If you want to {clean_topic} without feeling overwhelmed or wasting weeks of time, this video gives you the exact blueprint.",
+                    "visual_and_broll": "Fast cuts, screen recording of end result, bold text on screen. High energy.",
+                },
+                {
+                    "timestamp": "0:15 - 1:00",
+                    "section": "Stakes & Roadmap",
+                    "objective": "Explain why watching this now matters and preview the 3 key milestones to keep retention high.",
+                    "verbal_script_framework": "Most people struggle because they do X. In the next 10 minutes, we'll cover Step 1, Step 2, and the secret mistake to avoid at Step 3.",
+                    "visual_and_broll": "Presenter on camera with animated 3-step checklist sliding in on the right.",
+                },
+                {
+                    "timestamp": "1:00 - 3:30",
+                    "section": "Step 1: The Fast Foundation (Quick Win)",
+                    "objective": "Give the viewer an immediate, actionable result in the first 3 minutes so they feel instant progress.",
+                    "verbal_script_framework": f"First, let's set up the core foundation for {clean_topic} in under 2 minutes...",
+                    "visual_and_broll": "Over-the-shoulder software demo / practical live demonstration with mouse zooms.",
+                },
+                {
+                    "timestamp": "3:30 - 6:30",
+                    "section": "Step 2: The Core Implementation",
+                    "objective": "Deliver the meat of the strategy. Answer the primary questions beginners get stuck on.",
+                    "verbal_script_framework": "Now for the part most tutorials skip: how to actually connect everything together...",
+                    "visual_and_broll": "Step-by-step workflow with diagram graphics or screen share.",
+                },
+                {
+                    "timestamp": "6:30 - 7:00",
+                    "section": "Retention Reset & Pattern Interrupt",
+                    "objective": "Re-hook viewers right at the 60% mark where retention curves typically slump.",
+                    "verbal_script_framework": "Before we move to the final step, you MUST understand this one counterintuitive rule...",
+                    "visual_and_broll": "Camera angle shift, zoom in, music change to build anticipation.",
+                },
+                {
+                    "timestamp": "7:00 - 9:00",
+                    "section": "Step 3: Common Pitfalls & How to Avoid Them",
+                    "objective": "Address viewer doubts and common failure modes.",
+                    "verbal_script_framework": (
+                        f"The #1 mistake beginners make here is: {viewer_objections[0] if viewer_objections else 'overcomplicating the setup'}."
+                    ),
+                    "visual_and_broll": "Side-by-side 'Wrong Way vs Right Way' visual comparison.",
+                },
+                {
+                    "timestamp": "9:00 - 10:00",
+                    "section": "Conclusion & Watch-Time Loop CTA",
+                    "objective": "Summarize and bridge immediately to your next video instead of saying 'goodbye'.",
+                    "verbal_script_framework": "Now that you have this setup, the next critical thing you need is [Next Step], which I break down in this video right here...",
+                    "visual_and_broll": "Pointing to YouTube end screen video card, seamless transition without dead air.",
+                },
+            ]
+
+            return {
+                "success": True,
+                "video_title": clean_topic,
+                "target_audience": target_audience,
+                "estimated_duration": f"{target_duration_minutes} minutes",
+                "modeled_competitor_hook": competitor_hook,
+                "audience_pain_points_addressed": viewer_objections,
+                "retention_script_outline": script_structure,
+                "thumbnail_and_packaging_advice": {
+                    "thumbnail_visual_rule": "Limit to 3 visual elements: your face (strong expression), 1 high-contrast icon/graphic, and max 3 words of text.",
+                    "title_rule": "Keep under 50 characters so it doesn't truncate on mobile devices.",
+                },
+            }
+        except Exception as e:
+            return {"success": False, "error": str(e)}
+
+    def discover_niche_sponsors(
+        self,
+        niche_or_query: str,
+        sample_videos: int = 20,
+        region_code: Optional[str] = "US",
+    ) -> Dict[str, Any]:
+        """Discover brands and software companies actively paying creators for sponsorships in a niche.
+
+        Inspects the descriptions of top-ranking videos for sponsor disclosures, discount codes,
+        and tracking URLs. Reveals which companies have marketing budgets in this niche.
+
+        Args:
+            niche_or_query: Niche topic or keyword (e.g. 'productivity apps', 'coding', 'fitness').
+            sample_videos: Number of top videos to inspect (10 to 30, default 20).
+            region_code: Country code (default 'US').
+        """
+        from collections import Counter
+
+        try:
+            search_res = self.search(
+                query=niche_or_query,
+                max_results=min(sample_videos, 50),
+                search_type="video",
+                order="viewCount",
+                region_code=region_code,
+                raw=False,
+            )
+            if not search_res.get("success"):
+                return search_res
+
+            video_items = search_res.get("results", [])
+            video_ids = [item["id"] for item in video_items if item.get("id")]
+            details_res = self.get_video_details(video_ids=video_ids)
+            videos = details_res.get("videos", []) if details_res.get("success") else []
+
+            sponsors_found = []
+            sponsor_names: Counter = Counter()
+
+            sponsor_keywords = [
+                "sponsored by", "special thanks to", "use code", "coupon code",
+                "discount code", "partnered with", "brought to you by", "supported by"
+            ]
+
+            for v in videos:
+                desc = v.get("description", "")
+                video_sponsors = []
+                for line in desc.splitlines():
+                    line_lower = line.lower()
+                    if any(kw in line_lower for kw in sponsor_keywords):
+                        clean_line = line.strip()
+                        if 10 < len(clean_line) < 150:
+                            video_sponsors.append(clean_line)
+                            for kw in ["sponsored by", "thanks to", "brought to you by"]:
+                                if kw in line_lower:
+                                    parts = line_lower.split(kw)
+                                    if len(parts) > 1:
+                                        brand = parts[1].split(".")[0].split("!")[0].split(",")[0].strip()
+                                        if brand and len(brand) < 30:
+                                            sponsor_names[brand.title()] += 1
+
+                if video_sponsors:
+                    sponsors_found.append({
+                        "video_title": v.get("title"),
+                        "channel": v.get("channel_title"),
+                        "views": v.get("view_count"),
+                        "url": v.get("url"),
+                        "sponsor_mentions": video_sponsors[:2],
+                    })
+
+            top_brands = [{"brand": b, "frequency_detected": count} for b, count in sponsor_names.most_common(10)]
+
+            return {
+                "success": True,
+                "niche": niche_or_query,
+                "videos_analyzed": len(videos),
+                "sponsored_videos_detected": len(sponsors_found),
+                "top_active_sponsors": top_brands,
+                "sponsor_sightings": sponsors_found[:10],
+                "creator_monetization_guidance": [
+                    "These brands already have approved influencer budgets in this niche.",
+                    "Once you reach 1,000 - 5,000 views per video, pitch marketing managers at these exact companies.",
+                    "Include case studies of how their product solves the viewer pain points you cover in your videos.",
+                ],
+            }
+        except HttpError as e:
+            return self._handle_http_error(e)
+        except Exception as e:
+            return {"success": False, "error": str(e)}
+

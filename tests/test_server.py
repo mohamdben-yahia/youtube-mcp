@@ -36,6 +36,10 @@ async def test_server_tools_registered():
         "blueprint_new_channel",
         "search_channels",
         "reverse_engineer_channel",
+        "find_breakout_growth_channels",
+        "find_content_gaps",
+        "generate_retention_script_outline",
+        "discover_niche_sponsors",
     }
     assert expected_tools.issubset(tool_names)
 
@@ -304,6 +308,74 @@ def test_reverse_engineer_channel_tool(mock_get_client):
         channel_id_or_handle="@mkbhd",
         sample_videos=5,
         include_audience_gaps=True,
+    )
+
+
+@patch("youtube_mcp.server.get_client")
+def test_find_breakout_growth_channels_tool(mock_get_client):
+    from youtube_mcp.server import find_breakout_growth_channels
+    mock_client = MagicMock()
+    mock_client.find_breakout_growth_channels.return_value = {"success": True, "breakout_channels": []}
+    mock_get_client.return_value = mock_client
+
+    res = find_breakout_growth_channels(niche="ai coding", max_channel_age_months=18, min_subscribers=5000)
+    assert res["success"] is True
+    mock_client.find_breakout_growth_channels.assert_called_once_with(
+        niche="ai coding",
+        max_channel_age_months=18,
+        min_subscribers=5000,
+        max_subscribers=300000,
+        region_code="US",
+        max_results=10,
+    )
+
+
+@patch("youtube_mcp.server.get_client")
+def test_find_content_gaps_tool(mock_get_client):
+    from youtube_mcp.server import find_content_gaps
+    mock_client = MagicMock()
+    mock_client.find_content_gaps.return_value = {"success": True, "content_gap_opportunity": "HIGH"}
+    mock_get_client.return_value = mock_client
+
+    res = find_content_gaps(niche_or_topic="python for finance", max_results=10)
+    assert res["success"] is True
+    mock_client.find_content_gaps.assert_called_once_with(
+        niche_or_topic="python for finance",
+        max_results=10,
+        region_code="US",
+    )
+
+
+@patch("youtube_mcp.server.get_client")
+def test_generate_retention_script_outline_tool(mock_get_client):
+    from youtube_mcp.server import generate_retention_script_outline
+    mock_client = MagicMock()
+    mock_client.generate_retention_script_outline.return_value = {"success": True, "retention_script_outline": []}
+    mock_get_client.return_value = mock_client
+
+    res = generate_retention_script_outline(video_title_or_topic="Build an MCP Server", target_duration_minutes=12)
+    assert res["success"] is True
+    mock_client.generate_retention_script_outline.assert_called_once_with(
+        video_title_or_topic="Build an MCP Server",
+        competitor_video_id_or_url=None,
+        target_audience="Beginners",
+        target_duration_minutes=12,
+    )
+
+
+@patch("youtube_mcp.server.get_client")
+def test_discover_niche_sponsors_tool(mock_get_client):
+    from youtube_mcp.server import discover_niche_sponsors
+    mock_client = MagicMock()
+    mock_client.discover_niche_sponsors.return_value = {"success": True, "top_active_sponsors": []}
+    mock_get_client.return_value = mock_client
+
+    res = discover_niche_sponsors(niche_or_query="productivity apps", sample_videos=15)
+    assert res["success"] is True
+    mock_client.discover_niche_sponsors.assert_called_once_with(
+        niche_or_query="productivity apps",
+        sample_videos=15,
+        region_code="US",
     )
 
 

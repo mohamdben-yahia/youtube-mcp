@@ -40,6 +40,8 @@ Starting a YouTube channel without research leads to months of making videos nob
 ### 🔍 Search & Discovery Engine
 - **🔎 Channel Search (`search_channels`)**: Search YouTube specifically for channels matching any niche or query, instantly enriched with live subscriber counts, total view counts, video counts, handles, and URLs in one token-efficient call.
 - **📹 Video & Playlist Search (`search_videos`)**: Search videos, channels, or playlists with filters for date (`published_after`), order (`relevance`, `viewCount`, `date`), and region codes.
+- **🚀 Breakout Growth Channels (`find_breakout_growth_channels`)**: Identify newly created channels (e.g. last 6–24 months) that grew rapidly with high subscriber velocity, revealing what's working in today's algorithm.
+- **🎯 Content Gap & Low-Competition Search (`find_content_gaps`)**: Find high-demand search topics where top rankings are held by outdated videos (2+ years old) or small channels, revealing easy rank-1 opportunities.
 - **🎯 Multi-Niche Campaign Scouting (`scout_niche_channels`)**: Run batch discovery campaigns across multiple topics to find, filter, and rank the best creators by subscriber size, total views, or average views per video.
 - **🚀 Viral Outlier Detection (`find_viral_outliers`)**: Spot 2.5x to 10x+ breakout videos that dramatically outperform a channel's normal average to discover viral concepts.
 - **🔥 Real-Time Trend Discovery (`get_trending_niches`)**: Tap directly into YouTube's official real-time trending chart (`chart="mostPopular"`) to surface exploding niches, rising tags, recurring keywords, and breakout creators.
@@ -54,6 +56,8 @@ Starting a YouTube channel without research leads to months of making videos nob
   - **Monetization Blueprint**: Detects sponsors, affiliate links, newsletters (Beehiiv/Substack), and paid communities (Skool/Discord).
   - **Audience Flaws & Gaps**: Mines real viewer comments on their top video to find unanswered questions and complaints.
   - **Beginner Replication Playbook**: Provides exact title frameworks and differentiation angles for a new creator to model or compete.
+- **📝 Retention Script Generator (`generate_retention_script_outline`)**: Generates an 8-12 minute psychology-backed video outline modeled on competitor hooks and real viewer comments to maximize watch time.
+- **💰 Niche Sponsor Radar (`discover_niche_sponsors`)**: Scans top videos in any niche to identify active paying brand sponsors, promo codes, tracking links, and sponsorship frequency.
 - **📊 Channel Strategy & Playbook Auditor (`audit_channel_strategy`)**: Fast audit of a creator's publishing cadence, title formulas, and monetization funnel.
 - **⚔️ Competitor Benchmarking (`compare_channels`)**: Perform head-to-head performance comparisons across 2 to 5 rival channels.
 - **💬 Audience Sentiment & Pain-Point Mining (`analyze_audience_sentiment`)**: Mine comments for unanswered questions, viewer content requests, and recurring audience problems.
@@ -479,6 +483,54 @@ Executes an all-in-one market research study to launch a brand new YouTube chann
   }
 }
 ```
+
+---
+
+### `find_breakout_growth_channels` (Modern Breakout Channel Discovery)
+Finds newly created channels (last 6–24 months) that blew up with high subscriber velocity, revealing what's working in today's algorithm.
+
+| Parameter | Type | Default | Description |
+| :--- | :--- | :--- | :--- |
+| `niche` | `string` | *required* | Target niche (e.g. `"ai coding"`, `"personal finance"`, `"fitness"`). |
+| `max_channel_age_months` | `integer` | `24` | Maximum channel age in months. |
+| `min_subscribers` | `integer` | `1000` | Minimum subscriber threshold. |
+| `max_subscribers` | `integer` | `300000` | Maximum subscriber threshold. |
+| `region_code` | `string` | `"US"` | Country code. |
+| `max_results` | `integer` | `10` | Max channels to return. |
+
+---
+
+### `find_content_gaps` (Low-Competition Keyword Opportunities)
+Identifies search topics where top rankings are held by outdated videos (2+ years old), signaling easy ranking opportunities for a fresh 2026 video.
+
+| Parameter | Type | Default | Description |
+| :--- | :--- | :--- | :--- |
+| `niche_or_topic` | `string` | *required* | Search query or question (e.g. `"how to learn sql for data analysis"`). |
+| `max_results` | `integer` | `15` | Results to evaluate. |
+| `region_code` | `string` | `"US"` | Country code. |
+
+---
+
+### `generate_retention_script_outline` (Retention-Engineered Script Outline)
+Generates an 8-12 minute YouTube video outline engineered for high viewer retention, modeled on competitor transcripts and real viewer comment pain points.
+
+| Parameter | Type | Default | Description |
+| :--- | :--- | :--- | :--- |
+| `video_title_or_topic` | `string` | *required* | The video title or topic to outline. |
+| `competitor_video_id_or_url` | `string` | `None` | Optional competitor video to model hook and comments from. |
+| `target_audience` | `string` | `"Beginners"` | Ideal viewer demographic. |
+| `target_duration_minutes` | `integer` | `10` | Video duration in minutes. |
+
+---
+
+### `discover_niche_sponsors` (Active Brand Sponsor Radar)
+Scans the top videos in a niche to discover which brands and SaaS companies are actively paying creators for sponsorships, including coupon codes and tracking URLs.
+
+| Parameter | Type | Default | Description |
+| :--- | :--- | :--- | :--- |
+| `niche_or_query` | `string` | *required* | Niche topic or keyword (e.g. `"productivity apps"`, `"coding"`). |
+| `sample_videos` | `integer` | `20` | Number of top videos to inspect (10 to 30). |
+| `region_code` | `string` | `"US"` | Country code. |
 
 ---
 

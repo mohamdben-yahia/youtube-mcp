@@ -437,6 +437,113 @@ def blueprint_new_channel(
     )
 
 
+@mcp.tool()
+def find_breakout_growth_channels(
+    niche: str,
+    max_channel_age_months: int = 24,
+    min_subscribers: int = 1000,
+    max_subscribers: int = 300000,
+    region_code: Optional[str] = "US",
+    max_results: int = 10,
+) -> Dict[str, Any]:
+    """Find modern breakout channels created recently that grew rapidly from scratch.
+
+    Discovers new channels that recently solved the YouTube algorithm rather than legacy giants.
+
+    Args:
+        niche: Topic or niche keyword (e.g. 'ai automation', 'finance beginners').
+        max_channel_age_months: Maximum channel age in months (default 24).
+        min_subscribers: Minimum subscribers (default 1000).
+        max_subscribers: Maximum subscribers (default 300000).
+        region_code: ISO country code (default 'US').
+        max_results: Max results to return (default 10).
+    """
+    client = get_client()
+    return client.find_breakout_growth_channels(
+        niche=niche,
+        max_channel_age_months=max_channel_age_months,
+        min_subscribers=min_subscribers,
+        max_subscribers=max_subscribers,
+        region_code=region_code,
+        max_results=max_results,
+    )
+
+
+@mcp.tool()
+def find_content_gaps(
+    niche_or_topic: str,
+    max_results: int = 15,
+    region_code: Optional[str] = "US",
+) -> Dict[str, Any]:
+    """Identify high-demand content gaps and low-competition keyword opportunities.
+
+    Finds topics where top search results are outdated (2+ years old), signaling easy ranking
+    opportunities for a new channel to displace them with a fresh 2026 update.
+
+    Args:
+        niche_or_topic: Topic, query, or question to analyze (e.g. 'how to learn sql for data analysis').
+        max_results: Number of search results to inspect (default 15).
+        region_code: ISO country code (default 'US').
+    """
+    client = get_client()
+    return client.find_content_gaps(
+        niche_or_topic=niche_or_topic,
+        max_results=max_results,
+        region_code=region_code,
+    )
+
+
+@mcp.tool()
+def generate_retention_script_outline(
+    video_title_or_topic: str,
+    competitor_video_id_or_url: Optional[str] = None,
+    target_audience: str = "Beginners",
+    target_duration_minutes: int = 10,
+) -> Dict[str, Any]:
+    """Generate a full 8-12 minute retention-engineered YouTube video script outline.
+
+    Reverse-engineers competitor transcripts for opening hooks and integrates real viewer
+    pain points from comments to maximize watch time and viewer satisfaction.
+
+    Args:
+        video_title_or_topic: The topic or title of the video to outline.
+        competitor_video_id_or_url: Optional competitor video to model hook and structure from.
+        target_audience: Ideal viewer demographic (default 'Beginners').
+        target_duration_minutes: Target video runtime in minutes (default 10).
+    """
+    client = get_client()
+    return client.generate_retention_script_outline(
+        video_title_or_topic=video_title_or_topic,
+        competitor_video_id_or_url=competitor_video_id_or_url,
+        target_audience=target_audience,
+        target_duration_minutes=target_duration_minutes,
+    )
+
+
+@mcp.tool()
+def discover_niche_sponsors(
+    niche_or_query: str,
+    sample_videos: int = 20,
+    region_code: Optional[str] = "US",
+) -> Dict[str, Any]:
+    """Discover brands actively sponsoring creators in a niche with discount codes and URLs.
+
+    Reveals companies with active influencer marketing budgets in your niche so you can pitch
+    them as soon as you reach 1k-5k views per video.
+
+    Args:
+        niche_or_query: Niche topic or keyword (e.g. 'productivity apps', 'coding', 'fitness').
+        sample_videos: Number of top videos to inspect (10 to 30, default 20).
+        region_code: Country code (default 'US').
+    """
+    client = get_client()
+    return client.discover_niche_sponsors(
+        niche_or_query=niche_or_query,
+        sample_videos=sample_videos,
+        region_code=region_code,
+    )
+
+
 # --- MCP Prompts for New Creators ---
 
 @mcp.prompt()
