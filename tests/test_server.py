@@ -42,6 +42,8 @@ async def test_server_tools_registered():
         "discover_niche_sponsors",
         "generate_thumbnail_concepts",
         "generate_seo_metadata_pack",
+        "export_research_report",
+        "find_cross_language_opportunities",
     }
     assert expected_tools.issubset(tool_names)
 
@@ -411,6 +413,40 @@ def test_generate_seo_metadata_pack_tool(mock_get_client):
         key_takeaways=None,
         channel_name="Dev Lab",
         affiliate_links=None,
+    )
+
+
+@patch("youtube_mcp.server.get_client")
+def test_export_research_report_tool(mock_get_client):
+    from youtube_mcp.server import export_research_report
+    mock_client = MagicMock()
+    mock_client.export_research_report.return_value = {"success": True, "file_path": "reports/test.md"}
+    mock_get_client.return_value = mock_client
+
+    res = export_research_report(niche="ai coding", target_audience="devs", output_file="reports/test.md", region_code="US")
+    assert res["success"] is True
+    mock_client.export_research_report.assert_called_once_with(
+        niche="ai coding",
+        target_audience="devs",
+        output_file="reports/test.md",
+        region_code="US",
+    )
+
+
+@patch("youtube_mcp.server.get_client")
+def test_find_cross_language_opportunities_tool(mock_get_client):
+    from youtube_mcp.server import find_cross_language_opportunities
+    mock_client = MagicMock()
+    mock_client.find_cross_language_opportunities.return_value = {"success": True, "cross_language_opportunities": []}
+    mock_get_client.return_value = mock_client
+
+    res = find_cross_language_opportunities(topic="notion setup", target_language="es", target_region="ES", max_results=3)
+    assert res["success"] is True
+    mock_client.find_cross_language_opportunities.assert_called_once_with(
+        topic="notion setup",
+        target_language="es",
+        target_region="ES",
+        max_results=3,
     )
 
 

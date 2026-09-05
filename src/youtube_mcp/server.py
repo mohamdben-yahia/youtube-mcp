@@ -593,6 +593,61 @@ def generate_seo_metadata_pack(
     )
 
 
+@mcp.tool()
+def export_research_report(
+    niche: str,
+    target_audience: Optional[str] = None,
+    output_file: Optional[str] = None,
+    region_code: str = "US",
+) -> Dict[str, Any]:
+    """Generate a publication-ready Markdown research report for Notion or Obsidian.
+
+    Runs comprehensive market research and formats it into an executive-ready .md document
+    complete with tables, competitor rankings, viral video links, comment insights, and a 5-video roadmap.
+
+    Args:
+        niche: Topic or niche (e.g. 'ai automation', 'productivity systems', 'personal finance').
+        target_audience: Optional target audience description (e.g. 'beginners', 'freelancers').
+        output_file: Optional path where to save the markdown file (defaults to reports/<niche>_research_report.md).
+        region_code: Country market code (default 'US').
+    """
+    client = get_client()
+    return client.export_research_report(
+        niche=niche,
+        target_audience=target_audience,
+        output_file=output_file,
+        region_code=region_code,
+    )
+
+
+@mcp.tool()
+def find_cross_language_opportunities(
+    topic: str,
+    target_language: str = "es",
+    target_region: str = "ES",
+    max_results: int = 5,
+) -> Dict[str, Any]:
+    """Identify proven viral US/English video concepts with low competition in non-English markets.
+
+    Analyzes viral performance of English videos and checks competition levels in the target
+    language / region (Spanish, French, German, Portuguese, Italian, Arabic, Japanese), providing
+    translated title frameworks and market arbitrage scores.
+
+    Args:
+        topic: Core topic in English (e.g. 'notion for students', 'ai automation', 'intermittent fasting').
+        target_language: Target language code ('es', 'fr', 'de', 'pt', 'it', 'ar', 'ja').
+        target_region: Target country code ('ES', 'MX', 'FR', 'DE', 'BR', 'IT', 'JP', 'SA').
+        max_results: Max opportunities to return (default 5).
+    """
+    client = get_client()
+    return client.find_cross_language_opportunities(
+        topic=topic,
+        target_language=target_language,
+        target_region=target_region,
+        max_results=max_results,
+    )
+
+
 # --- Dynamic MCP Resources (youtube:// URIs) ---
 
 @mcp.resource("youtube://trending/{category}")

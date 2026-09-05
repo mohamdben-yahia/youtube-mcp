@@ -693,5 +693,140 @@ def test_generate_seo_metadata_pack():
     assert "Question of the day:" in res["pinned_comment_for_engagement"]
 
 
+def test_export_research_report(tmp_path):
+    client = YouTubeClient(api_key="test_key")
+
+    mock_blueprint = {
+        "success": True,
+        "niche": "notion automation",
+        "market_validation": {
+            "demand_status": "High",
+            "model_channels_found": 1,
+            "viral_outliers_identified": 1,
+        },
+        "competitors_to_model": [
+            {
+                "channel_name": "Notion Mastery",
+                "handle": "@notionmastery",
+                "subscribers": 50000,
+                "avg_views_per_video": 12000,
+                "url": "https://youtube.com/@notionmastery",
+            }
+        ],
+        "audience_unmet_needs": {
+            "audience_questions": [{"comment": "How do I connect Notion to Slack?", "like_count": 45}],
+            "viewer_video_requests": [{"comment": "Please do a video on Notion AI formulas", "like_count": 30}],
+            "common_pain_points": [{"comment": "Database relations are confusing", "like_count": 22}],
+        },
+        "first_5_videos_to_record": [
+            {
+                "video_number": 1,
+                "suggested_title_framework": "Notion for Beginners in 2026",
+                "why_this_works": "High organic search volume",
+                "reference_url": "https://youtube.com/watch?v=ref123",
+            }
+        ],
+        "launch_recommendations": {
+            "recommended_upload_schedule": "1 video per week",
+            "recommended_video_length": "10-12 minutes",
+            "first_30_seconds_rule": "Hook viewers fast",
+            "monetization_roadmap": ["Affiliate templates", "AdSense", "Consulting"],
+        },
+    }
+
+    out_file = str(tmp_path / "notion_report.md")
+    with patch.object(client, "blueprint_new_channel", return_value=mock_blueprint):
+        res = client.export_research_report(
+            niche="notion automation",
+            target_audience="freelancers",
+            output_file=out_file,
+            region_code="US",
+        )
+
+        assert res["success"] is True
+        assert res["file_path"] == out_file
+        assert "🚀 YouTube Market Research & Launch Blueprint" in res["report_markdown"]
+        assert "Notion Automation" in res["report_markdown"]
+        assert "@notionmastery" in res["report_markdown"]
+        assert "How do I connect Notion to Slack?" in res["report_markdown"]
+        assert (tmp_path / "notion_report.md").exists()
+
+
+def test_find_cross_language_opportunities():
+    client = YouTubeClient(api_key="test_key")
+
+    mock_outliers = {
+        "success": True,
+        "outliers": [
+            {
+                "title": "Build a Second Brain in Notion",
+                "views": 250000,
+                "url": "https://youtube.com/watch?v=outlier1",
+            }
+        ],
+    }
+
+    with patch.object(client, "find_viral_outliers", return_value=mock_outliers), \
+         patch.object(client, "search", return_value={"success": True, "results": []}):
+
+        res = client.find_cross_language_opportunities(
+            topic="second brain notion",
+            target_language="es",
+            target_region="ES",
+            max_results=3,
+        )
+
+        assert res["success"] is True
+        assert res["target_language"] == "Spanish"
+        assert res["target_region"] == "ES"
+        assert "HIGH ARBITRAGE OPPORTUNITY" in res["arbitrage_evaluation"]
+        assert len(res["localized_title_frameworks"]) == 3
+        assert len(res["cross_language_opportunities"]) == 1
+        assert res["cross_language_opportunities"][0]["proven_english_concept"] == "Build a Second Brain in Notion"
+        assert len(res["international_growth_playbook"]) == 3
+
+
+def test_client_search_caching(tmp_path):
+    from youtube_mcp.cache import ResponseCache
+    cache = ResponseCache(cache_dir=str(tmp_path), default_ttl=3600, enabled=True)
+    client = YouTubeClient(api_key="test_key", cache=cache)
+
+    mock_execute = MagicMock()
+    mock_execute.return_value = {
+        "items": [
+            {
+                "id": {"kind": "youtube#video", "videoId": "cached_vid_1"},
+                "snippet": {
+                    "title": "Cached Video 1",
+                    "description": "Desc",
+                    "channelTitle": "Chan",
+                    "channelId": "UC123",
+                    "publishedAt": "2026-01-01T00:00:00Z",
+                    "thumbnails": {"high": {"url": "https://thumb.url"}},
+                },
+            }
+        ],
+        "pageInfo": {"totalResults": 1},
+    }
+    mock_service = MagicMock()
+    mock_service.search().list.return_value.execute = mock_execute
+    client._service = mock_service
+
+    # First call: cache miss, executes API call
+    res1 = client.search(query="caching test", max_results=5)
+    assert res1["success"] is True
+    assert res1.get("_cached") is None
+    assert mock_execute.call_count == 1
+
+    # Second call: cache hit, served from disk cache without calling API again
+    res2 = client.search(query="caching test", max_results=5)
+    assert res2["success"] is True
+    assert res2.get("_cached") is True
+    assert res2["results"][0]["id"] == "cached_vid_1"
+    assert mock_execute.call_count == 1  # Still 1!
+
+
+
+
 
 

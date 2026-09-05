@@ -65,6 +65,9 @@ Starting a YouTube channel without research leads to months of making videos nob
 - **💬 Audience Sentiment & Pain-Point Mining (`analyze_audience_sentiment`)**: Mine comments for unanswered questions, viewer content requests, and recurring audience problems.
 - **✂️ Video Chapters & Viral Shorts Extractor (`extract_shorts_clips`)**: Generate timestamped chapters and extract top 30-60s punchy Shorts clips from transcripts.
 - **🗺️ Channel Launch Blueprint (`blueprint_new_channel`)**: All-in-one market research and 5-video launch roadmap for beginners.
+- **📑 Markdown & Notion Report Exporter (`export_research_report`)**: Export an end-to-end market research study and 5-video launch roadmap into an executive-ready `.md` file formatted with tables, competitor rankings, and comment insights.
+- **🌐 International Arbitrage Radar (`find_cross_language_opportunities`)**: Spot proven viral English topics with low competition in non-English markets (Spanish, French, German, Portuguese, Arabic, Japanese), providing localized title frameworks and translated hooks.
+- **⚡ Intelligent Daily Quota Caching**: Built-in disk-based caching (`ResponseCache`) with configurable TTL and directory (`YOUTUBE_CACHE_ENABLED`, `YOUTUBE_CACHE_DIR`, `YOUTUBE_CACHE_TTL`) to preserve your 10,000 unit/day Google API quota.
 
 ### 🌐 Dynamic MCP Resources (`youtube://` URIs)
 Exposes live context documents directly to LLMs:
@@ -565,6 +568,30 @@ Generates the complete metadata package: 3 mobile-optimized titles (<50 chars), 
 
 ---
 
+### `export_research_report` (Publication-Ready Markdown / Notion Exporter)
+Generates an executive-ready `.md` research report complete with competitor comparison tables, audience pain points, viral reference URLs, and a 5-video launch roadmap, saving it to disk or returning the markdown directly.
+
+| Parameter | Type | Default | Description |
+| :--- | :--- | :--- | :--- |
+| `niche` | `string` | *required* | Target niche or topic (e.g. `"ai automation"`, `"personal finance"`). |
+| `target_audience` | `string` | `None` | Optional description of target viewers (e.g. `"freelancers"`, `"students"`). |
+| `output_file` | `string` | `None` | Custom output file path (defaults to `reports/<niche>_research_report.md`). |
+| `region_code` | `string` | `"US"` | Target country code for localized search and metrics. |
+
+---
+
+### `find_cross_language_opportunities` (International Arbitrage Radar)
+Identifies proven viral US/English video concepts and checks competition levels in non-English markets (Spanish, French, German, Portuguese, Italian, Arabic, Japanese), providing native translated title frameworks and opening script hooks.
+
+| Parameter | Type | Default | Description |
+| :--- | :--- | :--- | :--- |
+| `topic` | `string` | *required* | Core topic in English (e.g. `"notion for students"`, `"ai coding"`). |
+| `target_language` | `string` | `"es"` | Target language code (`"es"`, `"fr"`, `"de"`, `"pt"`, `"ar"`, etc.). |
+| `target_region` | `string` | `"ES"` | Target country code (`"ES"`, `"MX"`, `"FR"`, `"DE"`, `"BR"`, etc.). |
+| `max_results` | `integer` | `5` | Maximum number of candidate arbitrage opportunities to evaluate. |
+
+---
+
 ## 🌐 Dynamic MCP Resources (`youtube://` URIs)
 
 MCP clients can read dynamic live context resources directly:
@@ -626,7 +653,7 @@ Run the full pytest suite with:
 pytest -v
 ```
 
-All 65 tests mock Google API and transcript network requests to prevent burning quota during CI/CD.
+All 74 tests mock Google API and transcript network requests to prevent burning quota during CI/CD.
 
 ---
 

@@ -14,14 +14,16 @@ from youtube_mcp.formatters import (
     format_comment_thread,
 )
 from youtube_mcp.transcripts import fetch_transcript, extract_video_id
+from youtube_mcp.cache import get_cache, ResponseCache
 
 
 class YouTubeClient:
     """Wrapper around googleapiclient for YouTube Data API v3."""
 
-    def __init__(self, api_key: Optional[str] = None):
+    def __init__(self, api_key: Optional[str] = None, cache: Optional[ResponseCache] = None):
         self.api_key = api_key or os.getenv("YOUTUBE_API_KEY")
         self._service = None
+        self.cache = cache or get_cache()
 
     @property
     def service(self):
@@ -102,6 +104,11 @@ class YouTubeClient:
             if region_code:
                 params["regionCode"] = region_code
 
+            if not raw and hasattr(self, "cache") and self.cache:
+                cached_res = self.cache.get("search", params)
+                if cached_res is not None:
+                    return cached_res
+
             request = self.service.search().list(**params)
             response = request.execute()
 
@@ -109,7 +116,10 @@ class YouTubeClient:
                 return response
 
             formatted = format_search_results(query, response)
-            return {"success": True, **formatted}
+            result = {"success": True, **formatted}
+            if hasattr(self, "cache") and self.cache:
+                self.cache.set("search", params, result)
+            return result
 
         except HttpError as e:
             return self._handle_http_error(e)
@@ -1987,5 +1997,273 @@ class YouTubeClient:
             }
         except Exception as e:
             return {"success": False, "error": str(e)}
+
+    def export_research_report(
+        self,
+        niche: str,
+        target_audience: Optional[str] = None,
+        output_file: Optional[str] = None,
+        region_code: str = "US",
+    ) -> Dict[str, Any]:
+        """Generate a publication-ready Markdown research report for Notion or Obsidian.
+
+        Runs complete market research and formats it into an executive-ready .md document
+        complete with tables, competitor rankings, viral video links, comment insights, and a 5-video roadmap.
+
+        Args:
+            niche: Topic or niche (e.g. 'ai automation', 'productivity systems', 'personal finance').
+            target_audience: Optional target audience description (e.g. 'beginners', 'freelancers').
+            output_file: Optional path where to save the markdown file.
+            region_code: Country market code (default 'US').
+        """
+        from pathlib import Path
+        from datetime import datetime, timezone
+
+        try:
+            blueprint = self.blueprint_new_channel(
+                niche=niche,
+                target_audience=target_audience,
+                region_code=region_code,
+            )
+            if not blueprint.get("success"):
+                return blueprint
+
+            clean_niche = niche.strip()
+            audience = target_audience or "General beginners"
+            now_str = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+
+            # Format Competitor Table
+            comp_rows = []
+            for ch in blueprint.get("competitors_to_model", []):
+                handle = ch.get("handle") or "@channel"
+                subs = f"{ch.get('subscribers', 0):,}"
+                avg_v = f"{ch.get('avg_views_per_video', 0):,}"
+                url = ch.get("url") or "#"
+                comp_rows.append(f"| [{ch.get('channel_name')}]({url}) | `{handle}` | {subs} | {avg_v} |")
+            comp_table = "\n".join(comp_rows) if comp_rows else "| None found | - | - | - |"
+
+            # Format 5 Videos Table
+            launch_rows = []
+            for v in blueprint.get("first_5_videos_to_record", []):
+                num = v.get("video_number")
+                title = v.get("suggested_title_framework")
+                why = v.get("why_this_works")
+                ref = f"[Watch Reference]({v['reference_url']})" if v.get("reference_url") else "N/A"
+                launch_rows.append(f"| #{num} | **{title}** | {why} | {ref} |")
+            launch_table = "\n".join(launch_rows) if launch_rows else "| - | - | - | - |"
+
+            # Format Audience Insights
+            audience_data = blueprint.get("audience_unmet_needs", {})
+            questions = audience_data.get("audience_questions", [])
+            requests = audience_data.get("viewer_video_requests", [])
+            pain_points = audience_data.get("common_pain_points", [])
+
+            q_bullets = "\n".join([f"- ❓ *\"{q.get('comment')}\"* ({q.get('like_count', 0)} likes)" for q in questions[:4]]) or "- No unanswered questions detected."
+            r_bullets = "\n".join([f"- 💡 *\"{r.get('comment')}\"* ({r.get('like_count', 0)} likes)" for r in requests[:4]]) or "- No viewer requests detected."
+            p_bullets = "\n".join([f"- ⚠️ *\"{p.get('comment')}\"* ({p.get('like_count', 0)} likes)" for p in pain_points[:4]]) or "- No major pain points detected."
+
+            # Markdown Template
+            report_md = f"""# 🚀 YouTube Market Research & Launch Blueprint
+**Niche:** {clean_niche.title()}  
+**Target Audience:** {audience}  
+**Date Generated:** {now_str}  
+**Region:** {region_code}  
+
+---
+
+## 1. Executive Summary & Demand Validation
+- **Demand Status:** {blueprint.get('market_validation', {}).get('demand_status', 'High')}
+- **Model Channels Discovered:** {blueprint.get('market_validation', {}).get('model_channels_found', 0)}
+- **Viral Outlier Topics Identified:** {blueprint.get('market_validation', {}).get('viral_outliers_identified', 0)}
+
+---
+
+## 2. Accessible Model Channels (1k – 300k Subscribers)
+These channels represent realistic, modern benchmarks to model rather than unreachable celebrity creators:
+
+| Channel Name | Handle | Subscribers | Avg. Views/Video |
+| :--- | :--- | :--- | :--- |
+{comp_table}
+
+---
+
+## 3. Voice of the Viewer: Pain Points & Unmet Questions
+Mined directly from top competitor comment sections to reveal what other creators missed:
+
+### ❓ Top Unanswered Questions
+{q_bullets}
+
+### 💡 Content Requests from Real Viewers
+{r_bullets}
+
+### ⚠️ Common Confusion & Pain Points
+{p_bullets}
+
+---
+
+## 4. The 5-Video Launch Roadmap
+Engineered from proven viral outlier topics that generated breakout views with low subscriber counts:
+
+| Video # | Suggested Title Framework | Why This Works | Inspiration |
+| :--- | :--- | :--- | :--- |
+{launch_table}
+
+---
+
+## 5. Creator Execution Playbook
+- **Upload Schedule:** {blueprint.get('launch_recommendations', {}).get('recommended_upload_schedule')}
+- **Optimal Video Length:** {blueprint.get('launch_recommendations', {}).get('recommended_video_length')}
+- **First 30 Seconds Rule:** {blueprint.get('launch_recommendations', {}).get('first_30_seconds_rule')}
+
+### 💰 Monetization Roadmap
+""" + "\n".join([f"- **{step}**" for step in blueprint.get("launch_recommendations", {}).get("monetization_roadmap", [])])
+
+            # Determine output file path
+            if output_file:
+                target_path = Path(output_file)
+            else:
+                slug = re.sub(r"[^\w\-]", "_", clean_niche.lower())
+                target_path = Path("reports") / f"{slug}_research_report.md"
+
+            target_path.parent.mkdir(parents=True, exist_ok=True)
+            with open(target_path, "w", encoding="utf-8") as f:
+                f.write(report_md)
+
+            return {
+                "success": True,
+                "niche": clean_niche,
+                "file_path": str(target_path),
+                "report_markdown": report_md,
+                "summary": f"Successfully exported market research report to {target_path}",
+            }
+        except Exception as e:
+            return {"success": False, "error": str(e)}
+
+    def find_cross_language_opportunities(
+        self,
+        topic: str,
+        target_language: str = "es",
+        target_region: str = "ES",
+        max_results: int = 5,
+    ) -> Dict[str, Any]:
+        """Identify proven viral US/English video concepts with low competition in non-English markets.
+
+        Analyzes the viral performance of English videos and checks competition levels in the target
+        language / region (Spanish, French, German, Portuguese, Italian, Arabic, Japanese), providing
+        translated title frameworks and market arbitrage scores.
+
+        Args:
+            topic: Core topic in English (e.g. 'notion for students', 'ai automation', 'intermittent fasting').
+            target_language: Target language code ('es', 'fr', 'de', 'pt', 'it', 'ar', 'ja').
+            target_region: Target country code ('ES', 'MX', 'FR', 'DE', 'BR', 'IT', 'JP', 'SA').
+            max_results: Max opportunities to return (default 5).
+        """
+        try:
+            clean_topic = topic.strip()
+            lang = target_language.lower().strip()
+            region = target_region.upper().strip()
+
+            outlier_res = self.find_viral_outliers(query=clean_topic, min_multiplier=2.0, max_results=max_results)
+            english_videos = outlier_res.get("outliers", []) if outlier_res.get("success") else []
+
+            if not english_videos:
+                search_eng = self.search(query=clean_topic, max_results=max_results, search_type="video", order="viewCount")
+                english_videos = search_eng.get("results", []) if search_eng.get("success") else []
+
+            templates = {
+                "es": {
+                    "lang_name": "Spanish",
+                    "how_to": f"Cómo usar {clean_topic.title()} desde Cero (Guía Completa 2026)",
+                    "mistake": f"El Gran Error que Cometes con {clean_topic.title()}",
+                    "fast": f"Cómo Dominar {clean_topic.title()} en 30 Días",
+                    "hook": f"En este video te enseñaré exactamente cómo dominar {clean_topic} sin perder tiempo...",
+                },
+                "fr": {
+                    "lang_name": "French",
+                    "how_to": f"Comment Débuter avec {clean_topic.title()} (Guide Complet 2026)",
+                    "mistake": f"L'Erreur que Tout le Monde Fait avec {clean_topic.title()}",
+                    "fast": f"Maîtriser {clean_topic.title()} en 30 Jours",
+                    "hook": f"Dans cette vidéo, je vous montre exactement comment utiliser {clean_topic} pas à pas...",
+                },
+                "de": {
+                    "lang_name": "German",
+                    "how_to": f"{clean_topic.title()} für Anfänger: Der Komplette Leitfaden 2026",
+                    "mistake": f"Der Größte Fehler bei {clean_topic.title()} (Und die Lösung)",
+                    "fast": f"{clean_topic.title()} in 30 Tagen Meistern",
+                    "hook": f"In diesem Video zeige ich dir Schritt für Schritt, wie du {clean_topic} richtig nutzt...",
+                },
+                "pt": {
+                    "lang_name": "Portuguese",
+                    "how_to": f"Como Começar com {clean_topic.title()} do Zero (Passo a Passo 2026)",
+                    "mistake": f"O Maior Erro que Você Comete com {clean_topic.title()}",
+                    "fast": f"Como Dominar {clean_topic.title()} em Poucos Dias",
+                    "hook": f"Neste vídeo, vou te mostrar o guia definitivo para {clean_topic} sem enrolação...",
+                },
+                "ar": {
+                    "lang_name": "Arabic",
+                    "how_to": f"دليل المبتدئين الشامل لـ {clean_topic.title()} في 2026",
+                    "mistake": f"الخطأ الفادح الذي يرتكبه الجميع مع {clean_topic.title()}",
+                    "fast": f"كيف تحترف {clean_topic.title()} في خطوات بسيطة",
+                    "hook": f"في هذا الفيديو، سأشرح لك خطوة بخطوة كل ما تحتاج معرفته عن {clean_topic}...",
+                },
+            }
+
+            lang_info = templates.get(lang, {
+                "lang_name": lang.upper(),
+                "how_to": f"How to Start with {clean_topic.title()} in 2026 (Beginner Guide)",
+                "mistake": f"The #1 Mistake with {clean_topic.title()}",
+                "fast": f"Master {clean_topic.title()} Step by Step",
+                "hook": f"Here is the complete step-by-step breakdown of {clean_topic}...",
+            })
+
+            local_search = self.search(
+                query=clean_topic,
+                max_results=5,
+                search_type="video",
+                region_code=region,
+                order="relevance",
+            )
+            local_results = local_search.get("results", []) if local_search.get("success") else []
+
+            arbitrage_status = (
+                "HIGH ARBITRAGE OPPORTUNITY: Proven demand in English with low localized competition in target market."
+                if len(english_videos) > 0
+                else "MODERATE ARBITRAGE"
+            )
+
+            opportunities = []
+            for i, vid in enumerate(english_videos[:max_results], 1):
+                eng_title = vid.get("title")
+                eng_views = vid.get("views") or vid.get("view_count") or "High"
+                opportunities.append({
+                    "rank": i,
+                    "proven_english_concept": eng_title,
+                    "english_benchmark_views": eng_views,
+                    "recommended_localized_title": lang_info["how_to"] if i % 2 == 1 else lang_info["mistake"],
+                    "reference_url": vid.get("url"),
+                })
+
+            return {
+                "success": True,
+                "topic": clean_topic,
+                "target_language": lang_info["lang_name"],
+                "target_region": region,
+                "arbitrage_evaluation": arbitrage_status,
+                "localized_title_frameworks": [
+                    {"type": "How-To / Beginner Guide", "title": lang_info["how_to"]},
+                    {"type": "Negative Framing / Mistake", "title": lang_info["mistake"]},
+                    {"type": "Fast Mastery", "title": lang_info["fast"]},
+                ],
+                "translated_opening_hook": lang_info["hook"],
+                "cross_language_opportunities": opportunities,
+                "international_growth_playbook": [
+                    f"1. Produce native {lang_info['lang_name']} voiceover or record directly in {lang_info['lang_name']}.",
+                    "2. Use localized thumbnail text in the target language (viewers click 3x more on native text).",
+                    f"3. Target tags in both {lang_info['lang_name']} and English to capture bilingual search traffic.",
+                ],
+            }
+        except Exception as e:
+            return {"success": False, "error": str(e)}
+
 
 
