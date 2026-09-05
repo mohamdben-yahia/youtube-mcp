@@ -54,8 +54,18 @@
 | :--- | :--- |
 | **🎬 Solo YouTubers & Creators** | Stop guessing video topics. Find proven 2.5x+ viral outliers, generate 7-beat retention scripts modeled on top performers, and craft high-CTR title formulas in seconds. |
 | **🏢 Growth Agencies & Strategists** | Deliver institutional-grade channel audit reports, competitor benchmark decks, and 30-day master content calendars to paying clients in 2 minutes instead of 8 hours. |
-| **🤖 AI Developers & Agent Builders** | Build autonomous YouTube agents (CrewAI, LangChain, Claude Desktop, Cursor) with a battle-tested, 100% mocked, production-grade MCP server. |
+| **🤖 AI Developers & Agent Builders** | Build autonomous YouTube agents (CrewAI, LangChain, Claude Desktop, Cursor) with a battle-tested, strictly real-data, production-grade MCP server. |
 | **💰 Influencer Marketers & Brands** | Scout breakout micro-influencers (1k–50k subs) with 3x+ engagement velocity and discover paying sponsors across any niche. |
+
+---
+
+### 🛡️ Strict Real-Data Guarantee (Zero Fake / Mock Fallbacks)
+
+> [!IMPORTANT]
+> **This server operates strictly on 100% authentic, live YouTube data.**
+> - **Zero Mock / Synthetic Fallbacks**: Unlike basic demos that return placeholder videos or fabricated statistics, this server connects directly to Google's live YouTube Data API v3, YouTube's official Atom XML feeds, and YouTube's player caption streams.
+> - **Transparent Error Handling**: If an API key is invalid or quota is exhausted, the server explicitly returns the real Google error (`401 Unauthorized` or `403 QuotaExceeded`). It **never** silently invents fake videos, channels, or view counts.
+> - **100% Verifiable Data**: Every `video_id`, `channel_id`, view count, and spoken transcript segment returned maps directly to authentic, public videos on `https://www.youtube.com`.
 
 ---
 
@@ -80,7 +90,7 @@
 | **11 Antigravity workflow skills** (full auto-pipeline) | ✅ | ❌ |
 | **Disk-based quota caching** | ✅ | ❌ |
 | **Docker & SSE remote hosting** | ✅ | ❌ |
-| **96+ automated tests** | ✅ | Untested |
+| **101 automated tests** | ✅ | Untested |
 
 ---
 
@@ -975,7 +985,7 @@ This repository includes a complete **Antigravity Plugin** (`.agents/plugins/you
 - **Transcripts**: `youtube-transcript-api` (no API key required)
 - **Validation**: `pydantic>=2.0.0`
 - **Environment**: `python-dotenv`
-- **Testing**: `pytest` + `pytest-asyncio` (91 tests, 100% mocked isolation)
+- **Testing**: `pytest` + `pytest-asyncio` (101 unit tests for CI isolation)
 - **Containerization**: Docker + Docker Compose (SSE remote hosting)
 - **CI/CD**: GitHub Actions (Python 3.10–3.13 matrix)
 
