@@ -995,6 +995,15 @@ This repository includes a complete **Antigravity Plugin** (`.agents/plugins/you
 
 If you find this useful, please ⭐ star the repository — it helps others discover it!
 
+## 🤝 Contributing & Community
+
+We welcome contributions of all kinds! Whether you want to add a new tool, improve documentation, or submit a bug fix:
+
+* 📖 Read our [Contributing Guide](CONTRIBUTING.md) to get started with local development and testing.
+* 📜 Check out the [Code of Conduct](CODE_OF_CONDUCT.md) for community guidelines.
+* 🔒 Review our [Security Policy](SECURITY.md) to responsibly report vulnerabilities.
+* 💡 Have an idea? [Open a Feature Request](https://github.com/mohamdben-yahia/youtube-mcp/issues/new?template=feature_request.md) or join [Discussions](https://github.com/mohamdben-yahia/youtube-mcp/discussions)!
+
 ---
 
 ## 📄 License
