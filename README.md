@@ -972,23 +972,41 @@ YouTube MCP Server works with **any MCP-compatible AI client**:
 
 ---
 
-## 🤖 Antigravity Plugin: 11 Workflow Skills
+## 🤖 Antigravity & Agent Skills: Autonomous YouTube Growth Engine
 
-This repository includes a complete **Antigravity Plugin** (`.agents/plugins/youtube-creator-suite/`) with 11 specialized workflow skills:
+While the **33 MCP Tools** provide the raw execution layer (YouTube API calls, RSS parsing, transcript analysis), the repository includes **11 Turnkey Agent Skills** in `.agents/skills/` and `.agents/plugins/youtube-creator-suite/`.
 
-| Skill | Description |
-| :--- | :--- |
-| `youtube-full-pipeline` | 🔄 **Auto-orchestrator** — chains all 10 skills end-to-end in 7 phases |
-| `channel-growth-audit` | Diagnose channel health and deliver 90-day turnaround plans |
-| `viral-video-ideation` | Content gaps → traffic classification → title CTR → thumbnail concepts |
-| `competitor-intelligence` | Reverse engineering, head-to-head benchmarks, sponsor discovery |
-| `channel-launch-architect` | 0-to-1 launch: binge playlists, scripts, SEO packs, monetization |
-| `youtube-content-repurposing` | Chapters, viral Shorts extraction, Community Tab polls |
-| `sponsor-pitch-architect` | Rate cards, creative integrations, cold pitch emails |
-| `algorithmic-publishing-scheduler` | Upload heatmaps, Sweet Spot windows, 30-day calendars |
-| `international-arbitrage-expander` | Cross-language gaps, localized metadata, dubbing strategy |
-| `breakout-creator-scout` | High-velocity micro-influencer scouting and partnership rosters |
-| `executive-research-dossier` | Institutional-grade market intelligence reports |
+These skills act as high-level cognitive blueprints, allowing AI agents (such as Antigravity, Claude, or Cursor) to autonomously chain multiple MCP tools together into complete client-ready deliverables.
+
+| Skill | Slash Command | What It Does |
+| :--- | :--- | :--- |
+| **Full Auto Pipeline** | `/youtube-full-pipeline` | 🔄 **Chains all 10 skills** across 7 automated phases: market recon → strategy → scripting → SEO → monetization → publishing → executive dossier. |
+| **Channel Growth Audit** | `/channel-growth-audit` | Audits an existing channel's retention, Shorts-to-longform ratio, sentiment, and outputs a 90-day turnaround plan. |
+| **Viral Video Ideation** | `/viral-video-ideation` | Discovers underserved content gaps, calculates CTR probabilities, and generates counter-positioned thumbnail ideas. |
+| **Competitor Intelligence** | `/competitor-intelligence` | Benchmarks 2–5 rival channels head-to-head, identifies top upload formats, and extracts paying brand sponsors. |
+| **Channel Launch Architect** | `/channel-launch-architect` | 0-to-1 blueprint: designs 5-video binge playlist loops, 7-beat retention scripts, and SEO upload packs. |
+| **Content Repurposing** | `/youtube-content-repurposing` | Transcribes longform videos, generates timestamped chapters, extracts 30–60s viral Shorts clips, and writes community polls. |
+| **Sponsor Pitch Architect** | `/sponsor-pitch-architect` | Identifies active sponsors in any vertical, computes CPM rate cards, and writes personalized brand outreach emails. |
+| **Publishing Scheduler** | `/algorithmic-publishing-scheduler` | Analyzes competitor upload times, identifies low-competition Sweet Spot windows, and builds a 30-day master calendar. |
+| **International Expansion** | `/international-arbitrage-expander` | Uncovers high-performing English videos with zero competition in Spanish/Portuguese/German and drafts localized metadata. |
+| **Breakout Creator Scout** | `/breakout-creator-scout` | Discovers micro-creators (1k–50k subs) exhibiting 3x+ engagement velocity for partnership rosters. |
+| **Executive Dossier** | `/executive-research-dossier` | Synthesizes all gathered market data into an institutional-grade Markdown or Notion report ready for clients. |
+
+### 🚀 How to Run the Skills
+
+#### In Antigravity IDE
+The skills are automatically detected from `.agents/skills/`. Simply type the slash command in chat:
+```text
+/youtube-full-pipeline niche="ai automation" competitor_handles=["@mreflow", "@aiadvantage"]
+```
+or audit an existing creator:
+```text
+/channel-growth-audit channel_handle="@creatorhandle"
+```
+
+#### In Cursor / Claude Desktop / Other LLM Agents
+Each skill is a self-contained, documented blueprint located in [`.agents/skills/`](file://.agents/skills/). You can pass the markdown file (e.g., [`SKILL.md`](file://.agents/skills/channel-growth-audit/SKILL.md)) directly to any agent as instructions while the YouTube MCP server is connected.
+
 
 ---
 
