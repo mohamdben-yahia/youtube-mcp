@@ -2691,6 +2691,384 @@ Engineered from proven viral outlier topics that generated breakout views with l
             ],
         }
 
+    def analyze_shorts_to_longform_ratio(
+        self,
+        channel_id_or_handle: str,
+        sample_videos: int = 20,
+    ) -> Dict[str, Any]:
+        """Analyze a channel's balance between YouTube Shorts and Long-Form videos.
+
+        Calculates the publishing ratio, view disparities, conversion efficiency, and provides
+        a customized publishing mix recommendation to avoid Shorts cannibalizing long-form watch time.
+
+        Args:
+            channel_id_or_handle: Channel handle (e.g. '@aliabdaal', '@mkbhd') or Channel ID.
+            sample_videos: Number of recent uploads to evaluate (10 to 50, default 20).
+        """
+        import re
+
+        try:
+            ch_res = self.get_channel_details(
+                for_handle=channel_id_or_handle if channel_id_or_handle.startswith("@") else None,
+                channel_id=channel_id_or_handle if not channel_id_or_handle.startswith("@") else None,
+            )
+            if not ch_res.get("success"):
+                return ch_res
+
+            ch_data = ch_res.get("channel", {})
+            uploads_id = ch_data.get("uploads_playlist_id")
+            if not uploads_id:
+                return {"success": False, "error": "Could not locate uploads playlist for this channel."}
+
+            playlist_res = self.get_playlist_items(playlist_id=uploads_id, max_results=sample_videos)
+            if not playlist_res.get("success"):
+                return playlist_res
+
+            items = playlist_res.get("items", [])
+            if not items:
+                return {"success": False, "error": "No recent uploads found for this channel."}
+
+            video_ids = [item.get("video_id") for item in items if item.get("video_id")]
+            details_res = self.get_video_details(video_ids=video_ids)
+            videos = details_res.get("videos", []) if details_res.get("success") else []
+
+            shorts = []
+            longform = []
+
+            for v in videos:
+                dur_str = v.get("duration", "")
+                views = v.get("view_count") or 0
+                title = v.get("title", "")
+                vid_id = v.get("video_id")
+                url = v.get("url")
+
+                # Parse duration in seconds
+                is_short = False
+                # Format is either 'm:ss' or 'h:mm:ss'
+                if dur_str and dur_str != "N/A":
+                    parts = dur_str.split(":")
+                    if len(parts) == 2:
+                        total_secs = int(parts[0]) * 60 + int(parts[1])
+                        if total_secs <= 60:
+                            is_short = True
+                    elif len(parts) == 1:
+                        if int(parts[0]) <= 60:
+                            is_short = True
+
+                # Fallback: #shorts in title or description
+                if "#shorts" in title.lower():
+                    is_short = True
+
+                summary = {
+                    "video_id": vid_id,
+                    "title": title,
+                    "duration": dur_str,
+                    "views": views,
+                    "url": url,
+                }
+
+                if is_short:
+                    shorts.append(summary)
+                else:
+                    longform.append(summary)
+
+            shorts_count = len(shorts)
+            longform_count = len(longform)
+            total_sampled = shorts_count + longform_count
+
+            shorts_ratio = round(shorts_count / max(longform_count, 1), 2)
+            avg_shorts_views = round(sum(v["views"] for v in shorts) / max(shorts_count, 1))
+            avg_long_views = round(sum(v["views"] for v in longform) / max(longform_count, 1))
+
+            view_multiplier = round(avg_shorts_views / max(avg_long_views, 1), 1)
+
+            # Diagnosis
+            if shorts_count > 0 and longform_count > 0 and view_multiplier >= 4.0:
+                diagnosis = (
+                    "HIGH SHORTS DISPARITY: Shorts receive 4x+ more views than long-form. "
+                    "Risk of subscriber dilution where Shorts subscribers ignore long-form uploads."
+                )
+                recommended_mix = "1 Long-Form per week + 2 Shorts that directly clip or tease the long-form video using YouTube's 'Related Video' link."
+            elif shorts_count == 0:
+                diagnosis = "PURE LONG-FORM: Channel relies 100% on long-form content. High watch-time depth and strong RPM."
+                recommended_mix = "Introduce 1 Short per week as a top-of-funnel testing ground for new concepts."
+            elif longform_count == 0:
+                diagnosis = "PURE SHORTS: Channel relies entirely on Shorts. High volume reach, but lower CPM and shallow audience connection."
+                recommended_mix = "Launch a cornerstone 8-12m long-form video bi-weekly to build topical authority and digital product monetization."
+            else:
+                diagnosis = "BALANCED FUNNEL: Healthy mix of discoverability (Shorts) and audience depth (Long-Form)."
+                recommended_mix = "Maintain current 2:1 or 1:1 cadence."
+
+            return {
+                "success": True,
+                "channel_name": ch_data.get("title"),
+                "handle": ch_data.get("custom_url"),
+                "subscribers": ch_data.get("subscriber_count"),
+                "total_uploads_analyzed": total_sampled,
+                "shorts_detected": shorts_count,
+                "longform_detected": longform_count,
+                "shorts_to_longform_ratio": f"{shorts_ratio}:1",
+                "average_views": {
+                    "shorts_avg_views": avg_shorts_views,
+                    "longform_avg_views": avg_long_views,
+                    "shorts_view_multiplier": f"{view_multiplier}x",
+                },
+                "funnel_diagnosis": diagnosis,
+                "recommended_strategy_for_beginners": recommended_mix,
+                "shorts_funnel_golden_rules": [
+                    "1. Always use YouTube's 'Related Video' link feature on Shorts to point viewers to the full 10-minute tutorial.",
+                    "2. Never post a Short on a topic unrelated to your channel's core niche (you will poison your subscriber recommendation pool).",
+                    "3. The best Short is the first 45 seconds of your best long-form video cut down with fast captions.",
+                ],
+            }
+        except Exception as e:
+            return {"success": False, "error": str(e)}
+
+    def classify_traffic_potential(
+        self,
+        topic_or_title: str,
+        target_niche: Optional[str] = None,
+    ) -> Dict[str, Any]:
+        """Classify whether a video topic will succeed via Evergreen Search or Viral Browse Feeds.
+
+        Provides algorithmic traffic predictions, expected RPM / AdSense monetization multipliers,
+        longevity expectations (3+ years vs 14 days), and optimized title variants for both traffic channels.
+
+        Args:
+            topic_or_title: The candidate video title, topic, or draft concept.
+            target_niche: Optional niche context (e.g. 'coding', 'personal finance', 'fitness').
+        """
+        clean_topic = topic_or_title.strip()
+        lower = clean_topic.lower()
+
+        search_indicators = [
+            "how to", "tutorial", "guide", "for beginners", "review", "vs", "best",
+            "setup", "step by step", "explained", "install", "walkthrough", "course",
+            "what is", "fixed", "tips", "roadmap", "checklist", "free"
+        ]
+
+        browse_indicators = [
+            "i tried", "what happened", "stop doing", "never", "why i", "truth about",
+            "mistake", "10x", "secret", "exposed", "insane", "ruined", "quit", "tested",
+            "changed my life", "don't buy", "worst", "shocking"
+        ]
+
+        search_score = sum(1 for kw in search_indicators if kw in lower)
+        browse_score = sum(1 for kw in browse_indicators if kw in lower)
+
+        if search_score > browse_score:
+            classification = "EVERGREEN SEARCH (Intent-Driven Traffic)"
+            longevity = "3 to 5+ Years (Passive, continuous views from Google and YouTube search)"
+            rpm_range = "$8.00 - $25.00+ per 1,000 views (High commercial search intent)"
+            algorithm_strategy = "Target exact viewer search queries in the title, first 2 lines of description, and spoken script."
+        elif browse_score > search_score:
+            classification = "BROWSE & SUGGESTED (Viral Home Feed Traffic)"
+            longevity = "7 to 21 Days (High initial spike in home feeds, decaying after impressions saturate)"
+            rpm_range = "$2.50 - $7.00 per 1,000 views (Broader entertainment/curiosity audience)"
+            algorithm_strategy = "Maximize CTR and First 60s Retention: Thumbnail and title must create an unresolved curiosity loop."
+        else:
+            classification = "HYBRID (Search & Browse Dual Engine)"
+            longevity = "1 to 2 Years (Spikes on release, then settles into a long-tail search asset)"
+            rpm_range = "$5.00 - $15.00 per 1,000 views"
+            algorithm_strategy = "Use a curiosity-driven title with search-friendly keywords tucked at the end or in the description."
+
+        base_clean = clean_topic.title()
+        title_search = f"{base_clean} (Step-by-Step Beginner Guide)"[:50]
+        title_browse = f"Why Most People Fail at {base_clean}"[:50]
+
+        return {
+            "success": True,
+            "topic": clean_topic,
+            "traffic_classification": classification,
+            "longevity_expectation": longevity,
+            "estimated_rpm_range": rpm_range,
+            "primary_traffic_driver": "Search Queries" if "SEARCH" in classification else "Home Feed & Recommended Videos",
+            "packaging_recommendations": {
+                "search_optimized_title": title_search,
+                "browse_optimized_title": title_browse,
+                "thumbnail_guidance": (
+                    "For Search: Clean diagram or screenshot of the end result. "
+                    "For Browse: High-contrast emotional reaction or unexpected visual anomaly."
+                ),
+            },
+            "strategic_rule_of_thumb": (
+                "New channels with 0 subscribers should aim for 70% Evergreen Search to build initial baseline views, "
+                "and 30% Browse/Viral concepts to test breakout potential."
+            ),
+        }
+
+    def generate_monetization_offers(
+        self,
+        niche: str,
+        target_audience: Optional[str] = None,
+        main_skill_or_topic: Optional[str] = None,
+    ) -> Dict[str, Any]:
+        """Architect 3 high-converting day-one monetization offers for channels with under 1,000 subscribers.
+
+        Enables creators to generate $500 - $3,000/mo from digital products, lead magnets, and consulting
+        without waiting to reach the YouTube Partner Program AdSense threshold.
+
+        Args:
+            niche: Topic or niche (e.g. 'notion productivity', 'python coding', 'budget travel').
+            target_audience: Target viewer demographic (e.g. 'freelancers', 'students', 'beginners').
+            main_skill_or_topic: Specific core skill being taught (optional).
+        """
+        clean_niche = niche.strip()
+        audience = target_audience or "beginners"
+        skill = main_skill_or_topic or clean_niche
+
+        offer_tier_1 = {
+            "tier": "Tier 1: Free Lead Magnet (Email Newsletter / Community Growth)",
+            "product_name": f"The Complete {clean_niche.title()} Starter Toolkit & Cheatsheet",
+            "price": "Free ($0 in exchange for Email Address)",
+            "format": "1-Page PDF Cheatsheet, Checklist, or Notion Resource Hub",
+            "why_it_converts": "Zero friction: viewers are desperate for organized shortcuts.",
+            "in_video_cta_script": (
+                f"I put together a free 1-page checklist with all the resources and steps covered in this video. "
+                f"You can grab it completely free at the link in the description below."
+            ),
+        }
+
+        offer_tier_2 = {
+            "tier": "Tier 2: Low-Ticket Digital Product (Self-Liquidating Asset)",
+            "product_name": f"{clean_niche.title()} Fast-Track Operating System & Templates",
+            "price": "$19 - $47 (Impulse purchase price point)",
+            "format": "Ready-to-use templates, code starter repos, workflow automations, or mini-guide",
+            "why_it_converts": f"Saves {audience} 20+ hours of setup time for the price of a takeout meal.",
+            "in_video_cta_script": (
+                f"If you want to skip all the manual setup and get my exact pre-built {clean_niche} templates, "
+                f"check out the link below for the starter pack."
+            ),
+        }
+
+        offer_tier_3 = {
+            "tier": "Tier 3: High-Ticket Consulting / Done-With-You Service",
+            "product_name": f"1-on-1 {clean_niche.title()} Strategy & Implementation Audit",
+            "price": "$250 - $750+ per session / retainer",
+            "format": "60-minute Zoom deep-dive + custom action plan",
+            "why_it_converts": "High-intent viewers want custom solutions tailored to their exact business/workflow.",
+            "in_video_cta_script": (
+                f"If you want personalized help setting this up for your specific workflow, "
+                f"I have a few spots open for 1-on-1 consulting calls. Application link is in the description."
+            ),
+        }
+
+        return {
+            "success": True,
+            "niche": clean_niche,
+            "target_audience": audience,
+            "monetization_philosophy": (
+                "Do not wait for YouTube AdSense. With 500 views per video, selling just 3 copies of a $29 digital template "
+                "makes you more money than 30,000 AdSense views."
+            ),
+            "three_tier_monetization_funnel": [offer_tier_1, offer_tier_2, offer_tier_3],
+            "description_box_setup_template": (
+                f"🎁 FREE DOWNLOAD: The Complete {clean_niche.title()} Toolkit\n"
+                f"👉 [Your Free Gumroad / Substack Link]\n\n"
+                f"⚡ GET THE SYSTEM: Pre-built {clean_niche.title()} Templates ($29)\n"
+                f"👉 [Your Digital Product Link]\n\n"
+                f"💼 WORK WITH ME: 1-on-1 Strategy & Implementation\n"
+                f"👉 [Your Calendly Link]\n"
+            ),
+        }
+
+    def design_binge_playlist(
+        self,
+        core_topic: str,
+        video_count: int = 5,
+        target_audience: Optional[str] = None,
+    ) -> Dict[str, Any]:
+        """Architect a 4-to-6 video binge-watching loop engineered to trigger YouTube's Session Watch Time multiplier.
+
+        Structures interconnected video concepts with seamless cliffhanger bridges and end-screen scripts
+        so viewers watch multiple videos in sequence, signalling algorithmic promotion.
+
+        Args:
+            core_topic: The overarching topic or learning journey (e.g. 'Build a SaaS in Python', 'Notion for Beginners').
+            video_count: Number of videos in the binge playlist series (3 to 6, default 5).
+            target_audience: Optional target audience context.
+        """
+        clean_topic = core_topic.strip()
+        count = max(min(video_count, 6), 3)
+
+        modules = [
+            {
+                "sequence": 1,
+                "role": "The Foundation & Quick Win",
+                "title": f"How to Get Started with {clean_topic.title()} in 2026 (Day 1 Roadmap)",
+                "content_focus": "Eliminates initial overwhelm. Gives the viewer a tangible success milestone within 10 minutes.",
+                "cliffhanger_bridge_script": (
+                    f"Now that you have your core foundation set up, the biggest mistake most people make next is [Common Mistake]. "
+                    f"In this next video right here, I break down exactly how to bypass that hurdle in under 5 minutes..."
+                ),
+            },
+            {
+                "sequence": 2,
+                "role": "The Essential Core Implementation",
+                "title": f"Setting Up Your First {clean_topic.title()} Project (Step-by-Step)",
+                "content_focus": "Delivers the primary tactical workflow that viewers came to learn.",
+                "cliffhanger_bridge_script": (
+                    f"Your setup is now live, but it will be slow and inefficient unless you automate the key steps. "
+                    f"Click right here for the exact automation workflows you need to install next..."
+                ),
+            },
+            {
+                "sequence": 3,
+                "role": "The Efficiency & Automation Accelerator",
+                "title": f"5 {clean_topic.title()} Hacks to Work 10x Faster",
+                "content_focus": "Showcases non-obvious optimizations, shortcuts, and power-user tips.",
+                "cliffhanger_bridge_script": (
+                    f"You now have the speed, but if you don't avoid these 3 critical failure modes, you could lose hours of work. "
+                    f"Watch this next video to safeguard your setup..."
+                ),
+            },
+            {
+                "sequence": 4,
+                "role": "The Threat Avoidance & Problem Solver",
+                "title": f"Stop Doing {clean_topic.title()} Like This (Top 3 Mistakes)",
+                "content_focus": "Directly tackles the pain points and objections viewers struggle with.",
+                "cliffhanger_bridge_script": (
+                    f"Now that you know what NOT to do, here is the advanced graduation framework to scale this to the next level. "
+                    f"Click here for the masterclass..."
+                ),
+            },
+            {
+                "sequence": 5,
+                "role": "The Advanced Capstone & Monetization",
+                "title": f"Mastering {clean_topic.title()}: Full Workflow & Next Steps",
+                "content_focus": "Pulls all previous videos together into a complete mastery workflow with monetization opportunities.",
+                "cliffhanger_bridge_script": (
+                    f"You've completed the entire series! If you want my pre-built templates and starter toolkit, "
+                    f"grab them completely free at the link in the description below."
+                ),
+            },
+        ]
+
+        selected_videos = modules[:count]
+
+        playlist_title = f"{clean_topic.title()} Masterclass: Zero to Pro (Complete 2026 Series)"
+        playlist_desc = (
+            f"The complete step-by-step masterclass series for mastering {clean_topic}. "
+            f"Watch in sequence from Video 1 to Video {count} to build your complete setup from scratch."
+        )
+
+        return {
+            "success": True,
+            "core_topic": clean_topic,
+            "total_videos_in_series": count,
+            "binge_playlist_metadata": {
+                "playlist_title": playlist_title,
+                "playlist_description": playlist_desc,
+            },
+            "serialized_video_roadmap": selected_videos,
+            "algorithmic_binge_rules": [
+                "1. Add every video in this series to a dedicated YouTube Playlist and set it as an official Series Playlist.",
+                "2. The last 15 seconds of each video MUST display an End Screen card linking specifically to the next video in this playlist.",
+                "3. Use consistent thumbnail design templates across the entire playlist so viewers instantly recognize them as parts of a single unified series.",
+            ],
+        }
+
+
 
 
 

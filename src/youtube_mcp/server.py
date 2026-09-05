@@ -739,6 +739,96 @@ def analyze_community_posts(
     )
 
 
+@mcp.tool()
+def analyze_shorts_to_longform_ratio(
+    channel_id_or_handle: str,
+    sample_videos: int = 20,
+) -> Dict[str, Any]:
+    """Analyze a channel's balance between YouTube Shorts and Long-Form videos.
+
+    Calculates publishing ratio, view disparities, conversion efficiency, and provides
+    a customized publishing mix recommendation to avoid Shorts cannibalizing long-form watch time.
+
+    Args:
+        channel_id_or_handle: Channel handle (e.g. '@aliabdaal', '@mkbhd') or Channel ID.
+        sample_videos: Number of recent uploads to evaluate (10 to 50, default 20).
+    """
+    client = get_client()
+    return client.analyze_shorts_to_longform_ratio(
+        channel_id_or_handle=channel_id_or_handle,
+        sample_videos=sample_videos,
+    )
+
+
+@mcp.tool()
+def classify_traffic_potential(
+    topic_or_title: str,
+    target_niche: Optional[str] = None,
+) -> Dict[str, Any]:
+    """Classify whether a video topic will succeed via Evergreen Search or Viral Browse Feeds.
+
+    Provides algorithmic traffic predictions, expected RPM / AdSense monetization multipliers,
+    longevity expectations (3+ years vs 14 days), and optimized title variants for both traffic channels.
+
+    Args:
+        topic_or_title: Candidate video title, topic, or draft concept.
+        target_niche: Optional niche context (e.g. 'coding', 'personal finance', 'fitness').
+    """
+    client = get_client()
+    return client.classify_traffic_potential(
+        topic_or_title=topic_or_title,
+        target_niche=target_niche,
+    )
+
+
+@mcp.tool()
+def generate_monetization_offers(
+    niche: str,
+    target_audience: Optional[str] = None,
+    main_skill_or_topic: Optional[str] = None,
+) -> Dict[str, Any]:
+    """Architect 3 high-converting day-one monetization offers for channels with under 1,000 subscribers.
+
+    Enables creators to generate $500 - $3,000/mo from digital products, lead magnets, and consulting
+    without waiting to reach the YouTube Partner Program AdSense threshold.
+
+    Args:
+        niche: Topic or niche (e.g. 'notion productivity', 'python coding', 'budget travel').
+        target_audience: Target viewer demographic (e.g. 'freelancers', 'students', 'beginners').
+        main_skill_or_topic: Specific core skill being taught (optional).
+    """
+    client = get_client()
+    return client.generate_monetization_offers(
+        niche=niche,
+        target_audience=target_audience,
+        main_skill_or_topic=main_skill_or_topic,
+    )
+
+
+@mcp.tool()
+def design_binge_playlist(
+    core_topic: str,
+    video_count: int = 5,
+    target_audience: Optional[str] = None,
+) -> Dict[str, Any]:
+    """Architect a 4-to-6 video binge-watching loop engineered to trigger YouTube's Session Watch Time multiplier.
+
+    Structures interconnected video concepts with seamless cliffhanger bridges and end-screen scripts
+    so viewers watch multiple videos in sequence, signalling algorithmic promotion.
+
+    Args:
+        core_topic: Overarching topic or learning journey (e.g. 'Build a SaaS in Python', 'Notion for Beginners').
+        video_count: Number of videos in the binge playlist series (3 to 6, default 5).
+        target_audience: Optional target audience context.
+    """
+    client = get_client()
+    return client.design_binge_playlist(
+        core_topic=core_topic,
+        video_count=video_count,
+        target_audience=target_audience,
+    )
+
+
 # --- Dynamic MCP Resources (youtube:// URIs) ---
 
 @mcp.resource("youtube://trending/{category}")

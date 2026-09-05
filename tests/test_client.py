@@ -907,6 +907,93 @@ def test_analyze_community_posts():
     assert len(res["conversion_tips"]) == 3
 
 
+def test_analyze_shorts_to_longform_ratio():
+    client = YouTubeClient(api_key="test_key")
+
+    mock_ch = {
+        "success": True,
+        "channel": {
+            "title": "Tech Creator",
+            "custom_url": "@techcreator",
+            "subscriber_count": 100000,
+            "uploads_playlist_id": "UU12345",
+        },
+    }
+
+    mock_playlist = {
+        "success": True,
+        "items": [
+            {"video_id": "short1"},
+            {"video_id": "short2"},
+            {"video_id": "long1"},
+        ],
+    }
+
+    mock_details = {
+        "success": True,
+        "videos": [
+            {"video_id": "short1", "title": "Quick Hack #shorts", "duration": "0:45", "view_count": 50000, "url": "https://youtube.com/shorts/short1"},
+            {"video_id": "short2", "title": "Cool Trick", "duration": "0:30", "view_count": 40000, "url": "https://youtube.com/shorts/short2"},
+            {"video_id": "long1", "title": "Full Python Guide", "duration": "12:30", "view_count": 10000, "url": "https://youtube.com/watch?v=long1"},
+        ],
+    }
+
+    with patch.object(client, "get_channel_details", return_value=mock_ch), \
+         patch.object(client, "get_playlist_items", return_value=mock_playlist), \
+         patch.object(client, "get_video_details", return_value=mock_details):
+
+        res = client.analyze_shorts_to_longform_ratio(channel_id_or_handle="@techcreator", sample_videos=10)
+        assert res["success"] is True
+        assert res["shorts_detected"] == 2
+        assert res["longform_detected"] == 1
+        assert res["shorts_to_longform_ratio"] == "2.0:1"
+        assert res["average_views"]["shorts_avg_views"] == 45000
+        assert res["average_views"]["longform_avg_views"] == 10000
+        assert "funnel_diagnosis" in res
+        assert len(res["shorts_funnel_golden_rules"]) == 3
+
+
+def test_classify_traffic_potential():
+    client = YouTubeClient(api_key="test_key")
+
+    # Search concept
+    res_search = client.classify_traffic_potential(topic_or_title="How to Learn Python Step by Step for Beginners")
+    assert res_search["success"] is True
+    assert "EVERGREEN SEARCH" in res_search["traffic_classification"]
+    assert "3 to 5+ Years" in res_search["longevity_expectation"]
+    assert "search_optimized_title" in res_search["packaging_recommendations"]
+
+    # Browse concept
+    res_browse = client.classify_traffic_potential(topic_or_title="Stop Doing This! I Tried Quitting Python for 30 Days")
+    assert res_browse["success"] is True
+    assert "BROWSE" in res_browse["traffic_classification"]
+
+
+def test_generate_monetization_offers():
+    client = YouTubeClient(api_key="test_key")
+
+    res = client.generate_monetization_offers(niche="notion productivity", target_audience="freelancers")
+    assert res["success"] is True
+    assert res["niche"] == "notion productivity"
+    assert len(res["three_tier_monetization_funnel"]) == 3
+    assert res["three_tier_monetization_funnel"][0]["tier"].startswith("Tier 1: Free Lead Magnet")
+    assert "$19 - $47" in res["three_tier_monetization_funnel"][1]["price"]
+    assert "description_box_setup_template" in res
+
+
+def test_design_binge_playlist():
+    client = YouTubeClient(api_key="test_key")
+
+    res = client.design_binge_playlist(core_topic="Building AI Agents with Python", video_count=5)
+    assert res["success"] is True
+    assert res["total_videos_in_series"] == 5
+    assert len(res["serialized_video_roadmap"]) == 5
+    assert res["serialized_video_roadmap"][0]["role"] == "The Foundation & Quick Win"
+    assert "cliffhanger_bridge_script" in res["serialized_video_roadmap"][0]
+    assert len(res["algorithmic_binge_rules"]) == 3
+
+
+
 
 
 

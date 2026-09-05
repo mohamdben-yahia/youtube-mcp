@@ -48,6 +48,10 @@ async def test_server_tools_registered():
         "analyze_optimal_upload_time",
         "predict_retention_dropoffs",
         "analyze_community_posts",
+        "analyze_shorts_to_longform_ratio",
+        "classify_traffic_potential",
+        "generate_monetization_offers",
+        "design_binge_playlist",
     }
     assert expected_tools.issubset(tool_names)
 
@@ -513,6 +517,68 @@ def test_analyze_community_posts_tool(mock_get_client):
     mock_client.analyze_community_posts.assert_called_once_with(
         niche_or_channel="productivity",
         target_goal="growth",
+    )
+
+
+@patch("youtube_mcp.server.get_client")
+def test_analyze_shorts_to_longform_ratio_tool(mock_get_client):
+    from youtube_mcp.server import analyze_shorts_to_longform_ratio
+    mock_client = MagicMock()
+    mock_client.analyze_shorts_to_longform_ratio.return_value = {"success": True, "shorts_to_longform_ratio": "2:1"}
+    mock_get_client.return_value = mock_client
+
+    res = analyze_shorts_to_longform_ratio(channel_id_or_handle="@mkbhd", sample_videos=15)
+    assert res["success"] is True
+    mock_client.analyze_shorts_to_longform_ratio.assert_called_once_with(
+        channel_id_or_handle="@mkbhd",
+        sample_videos=15,
+    )
+
+
+@patch("youtube_mcp.server.get_client")
+def test_classify_traffic_potential_tool(mock_get_client):
+    from youtube_mcp.server import classify_traffic_potential
+    mock_client = MagicMock()
+    mock_client.classify_traffic_potential.return_value = {"success": True, "traffic_classification": "EVERGREEN SEARCH"}
+    mock_get_client.return_value = mock_client
+
+    res = classify_traffic_potential(topic_or_title="Python Tutorial", target_niche="coding")
+    assert res["success"] is True
+    mock_client.classify_traffic_potential.assert_called_once_with(
+        topic_or_title="Python Tutorial",
+        target_niche="coding",
+    )
+
+
+@patch("youtube_mcp.server.get_client")
+def test_generate_monetization_offers_tool(mock_get_client):
+    from youtube_mcp.server import generate_monetization_offers
+    mock_client = MagicMock()
+    mock_client.generate_monetization_offers.return_value = {"success": True, "three_tier_monetization_funnel": []}
+    mock_get_client.return_value = mock_client
+
+    res = generate_monetization_offers(niche="notion templates", target_audience="freelancers", main_skill_or_topic="notion")
+    assert res["success"] is True
+    mock_client.generate_monetization_offers.assert_called_once_with(
+        niche="notion templates",
+        target_audience="freelancers",
+        main_skill_or_topic="notion",
+    )
+
+
+@patch("youtube_mcp.server.get_client")
+def test_design_binge_playlist_tool(mock_get_client):
+    from youtube_mcp.server import design_binge_playlist
+    mock_client = MagicMock()
+    mock_client.design_binge_playlist.return_value = {"success": True, "serialized_video_roadmap": []}
+    mock_get_client.return_value = mock_client
+
+    res = design_binge_playlist(core_topic="Build an MCP Server", video_count=5)
+    assert res["success"] is True
+    mock_client.design_binge_playlist.assert_called_once_with(
+        core_topic="Build an MCP Server",
+        video_count=5,
+        target_audience=None,
     )
 
 

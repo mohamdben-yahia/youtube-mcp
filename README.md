@@ -71,6 +71,10 @@ Starting a YouTube channel without research leads to months of making videos nob
 - **⏰ Upload Timing & Publishing Schedule Optimizer (`analyze_optimal_upload_time`)**: Analyzes competitor publishing days and hours to find low-congestion "Sweet Spot" upload windows before peak viewer activity.
 - **📊 Retention Dropoff Predictor & Pacing Analyzer (`predict_retention_dropoffs`)**: Evaluates script/transcript words-per-minute pacing, detects monologue drop-off hazards, and injects timestamped visual pattern interrupts and retention resets.
 - **🗳️ Community Tab & Viral Poll Strategy Engine (`analyze_community_posts`)**: Generates high-converting identity polls, video topic voting polls, and discussion drops that get pushed to non-subscribers' home feeds.
+- **🔄 Shorts vs Long-Form Funnel Optimizer (`analyze_shorts_to_longform_ratio`)**: Computes competitor Shorts-to-long-form ratios and view disparities to prevent subscriber cannibalization.
+- **🌲 Evergreen Search vs Viral Browse Classifier (`classify_traffic_potential`)**: Classifies topics into 3+ year passive search assets vs 14-day viral home feed spikes, estimating RPM and keyword packaging.
+- **💎 Day-One Monetization Offer Architect (`generate_monetization_offers`)**: Designs 3 high-converting digital product tiers (Lead Magnet, $29 Template, High-Ticket Service) to monetize with under 1,000 subscribers without AdSense.
+- **🔗 Binge-Watching Series & Playlist Architect (`design_binge_playlist`)**: Structures a 4-6 video serialized loop with cliffhanger end-screen bridging scripts to multiply Session Watch Time.
 - **⚡ Intelligent Daily Quota Caching**: Built-in disk-based caching (`ResponseCache`) with configurable TTL and directory (`YOUTUBE_CACHE_ENABLED`, `YOUTUBE_CACHE_DIR`, `YOUTUBE_CACHE_TTL`) to preserve your 10,000 unit/day Google API quota.
 
 ### 🌐 Dynamic MCP Resources (`youtube://` URIs)
@@ -638,6 +642,48 @@ Generates high-converting identity polls, video topic voting polls, knowledge qu
 
 ---
 
+### `analyze_shorts_to_longform_ratio` (Shorts vs Long-Form Funnel Optimizer)
+Computes a channel's publishing ratio, view disparities between Shorts and long-form uploads, and diagnoses whether Shorts are cannibalizing channel watch time.
+
+| Parameter | Type | Default | Description |
+| :--- | :--- | :--- | :--- |
+| `channel_id_or_handle` | `string` | *required* | Channel handle (e.g. `'@aliabdaal'`) or Channel ID. |
+| `sample_videos` | `integer` | `20` | Number of recent uploads to evaluate (10 to 50). |
+
+---
+
+### `classify_traffic_potential` (Evergreen Search vs Viral Browse Classifier)
+Evaluates whether a video concept will succeed via long-tail Evergreen Search (3+ years passive views) or Browse Feature Spikes (home feed viral decay curve), estimating expected RPM and keyword packaging.
+
+| Parameter | Type | Default | Description |
+| :--- | :--- | :--- | :--- |
+| `topic_or_title` | `string` | *required* | Candidate video title, topic, or draft concept. |
+| `target_niche` | `string` | `None` | Optional niche context (e.g. `"coding"`, `"personal finance"`). |
+
+---
+
+### `generate_monetization_offers` (Day-One Monetization Offer Architect)
+Architects 3 high-converting monetization tiers (Free Lead Magnet, $19-$47 Impulse Template, $250-$750 Consulting) for creators with under 1,000 subscribers, with exact description box and spoken CTA scripts.
+
+| Parameter | Type | Default | Description |
+| :--- | :--- | :--- | :--- |
+| `niche` | `string` | *required* | Topic or niche (e.g. `"notion productivity"`, `"python coding"`). |
+| `target_audience` | `string` | `None` | Target demographic (e.g. `"freelancers"`, `"beginners"`). |
+| `main_skill_or_topic` | `string` | `None` | Specific core skill or software. |
+
+---
+
+### `design_binge_playlist` (Binge-Watching Series & Playlist Architect)
+Architects a 4-to-6 video interconnected binge-watching series with end-screen cliffhanger scripts and optimized playlist metadata to maximize Session Watch Time.
+
+| Parameter | Type | Default | Description |
+| :--- | :--- | :--- | :--- |
+| `core_topic` | `string` | *required* | Overarching learning journey (e.g. `"Build an MCP Server in Python"`). |
+| `video_count` | `integer` | `5` | Number of videos in series (3 to 6). |
+| `target_audience` | `string` | `None` | Target viewer demographic. |
+
+---
+
 ## 🌐 Dynamic MCP Resources (`youtube://` URIs)
 
 MCP clients can read dynamic live context resources directly:
@@ -699,7 +745,7 @@ Run the full pytest suite with:
 pytest -v
 ```
 
-All 83 tests mock Google API and transcript network requests to prevent burning quota during CI/CD.
+All 91 tests mock Google API and transcript network requests to prevent burning quota during CI/CD.
 
 ---
 
