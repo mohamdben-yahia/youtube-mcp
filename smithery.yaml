@@ -16,7 +16,7 @@ startCommand:
     |
     (config) => ({
       command: "uvx",
-      args: ["youtube-mcp"],
+      args: ["--from", "git+https://github.com/mohamdben-yahia/youtube-mcp.git", "youtube-mcp"],
       env: {
         ...(config.youtubeApiKey ? { YOUTUBE_API_KEY: config.youtubeApiKey } : {}),
         ...(config.youtubeApiKeys ? { YOUTUBE_API_KEYS: config.youtubeApiKeys } : {})

@@ -227,9 +227,9 @@ To automatically install and configure YouTube MCP Server for Claude Desktop via
 npx -y @smithery/cli install youtube-mcp --client claude
 ```
 
-### 2. Instant Run with `uvx` (No Install Needed)
+### 2. Instant Run with `uvx` (No Clone or Install Needed)
 
-Run the server directly anywhere in 1 second using `uvx`:
+Run the server directly anywhere in seconds using `uvx`:
 
 ```bash
 # Single API Key
@@ -238,13 +238,13 @@ export YOUTUBE_API_KEY="your_api_key_here"
 # Or Multi-Key Pool (automatic quota failover)
 export YOUTUBE_API_KEYS="key_1,key_2,key_3"
 
-uvx youtube-mcp
+uvx --from git+https://github.com/mohamdben-yahia/youtube-mcp.git youtube-mcp
 ```
 
 ### 3. Install via `pip`
 
 ```bash
-pip install youtube-mcp
+pip install git+https://github.com/mohamdben-yahia/youtube-mcp.git
 youtube-mcp
 ```
 
@@ -289,7 +289,11 @@ Add the following to your Claude Desktop configuration file:
   "mcpServers": {
     "youtube": {
       "command": "uvx",
-      "args": ["youtube-mcp"],
+      "args": [
+        "--from",
+        "git+https://github.com/mohamdben-yahia/youtube-mcp.git",
+        "youtube-mcp"
+      ],
       "env": {
         "YOUTUBE_API_KEY": "YOUR_YOUTUBE_API_KEY"
       }
@@ -327,7 +331,11 @@ Add to your project's `.cursor/mcp.json` or global MCP settings:
   "mcpServers": {
     "youtube": {
       "command": "uvx",
-      "args": ["youtube-mcp"],
+      "args": [
+        "--from",
+        "git+https://github.com/mohamdben-yahia/youtube-mcp.git",
+        "youtube-mcp"
+      ],
       "env": {
         "YOUTUBE_API_KEY": "YOUR_YOUTUBE_API_KEY"
       }
@@ -345,7 +353,11 @@ Add to `.agents/mcp_config.json` (or `~/.gemini/config/mcp_config.json`):
   "mcpServers": {
     "youtube": {
       "command": "uvx",
-      "args": ["youtube-mcp"],
+      "args": [
+        "--from",
+        "git+https://github.com/mohamdben-yahia/youtube-mcp.git",
+        "youtube-mcp"
+      ],
       "env": {
         "YOUTUBE_API_KEY": "YOUR_YOUTUBE_API_KEY"
       }
