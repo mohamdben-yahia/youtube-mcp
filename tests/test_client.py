@@ -661,4 +661,37 @@ def test_discover_niche_sponsors():
         assert len(res["creator_monetization_guidance"]) == 3
 
 
+def test_generate_thumbnail_concepts():
+    client = YouTubeClient(api_key="test_key")
+
+    res = client.generate_thumbnail_concepts(
+        video_title="How I Built a $10k/mo Micro-SaaS",
+        target_niche="saas",
+    )
+    assert res["success"] is True
+    assert res["video_title"] == "How I Built a $10k/mo Micro-SaaS"
+    assert len(res["concepts"]) == 3
+    assert res["concepts"][0]["concept_id"] == "concept_a_curiosity_contrast"
+    assert "ai_image_prompt" in res["concepts"][0]
+    assert len(res["packaging_golden_rules"]) == 3
+
+
+def test_generate_seo_metadata_pack():
+    client = YouTubeClient(api_key="test_key")
+
+    res = client.generate_seo_metadata_pack(
+        topic="Python Web Scraping Tutorial",
+        channel_name="Code Lab",
+        affiliate_links=["https://example.com/proxy"],
+    )
+    assert res["success"] is True
+    assert len(res["mobile_optimized_titles"]) == 3
+    assert all(t["char_count"] <= 50 for t in res["mobile_optimized_titles"])
+    assert "TIMESTAMPS:" in res["youtube_studio_description"]
+    assert "Code Lab" in res["youtube_studio_description"]
+    assert len(res["top_15_tags"]) <= 15
+    assert "Question of the day:" in res["pinned_comment_for_engagement"]
+
+
+
 

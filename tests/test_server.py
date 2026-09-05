@@ -40,6 +40,8 @@ async def test_server_tools_registered():
         "find_content_gaps",
         "generate_retention_script_outline",
         "discover_niche_sponsors",
+        "generate_thumbnail_concepts",
+        "generate_seo_metadata_pack",
     }
     assert expected_tools.issubset(tool_names)
 
@@ -379,6 +381,52 @@ def test_discover_niche_sponsors_tool(mock_get_client):
     )
 
 
+@patch("youtube_mcp.server.get_client")
+def test_generate_thumbnail_concepts_tool(mock_get_client):
+    from youtube_mcp.server import generate_thumbnail_concepts
+    mock_client = MagicMock()
+    mock_client.generate_thumbnail_concepts.return_value = {"success": True, "concepts": []}
+    mock_get_client.return_value = mock_client
+
+    res = generate_thumbnail_concepts(video_title="How to Code", target_niche="tech")
+    assert res["success"] is True
+    mock_client.generate_thumbnail_concepts.assert_called_once_with(
+        video_title="How to Code",
+        target_niche="tech",
+        competitor_video_id_or_url=None,
+    )
+
+
+@patch("youtube_mcp.server.get_client")
+def test_generate_seo_metadata_pack_tool(mock_get_client):
+    from youtube_mcp.server import generate_seo_metadata_pack
+    mock_client = MagicMock()
+    mock_client.generate_seo_metadata_pack.return_value = {"success": True, "top_15_tags": []}
+    mock_get_client.return_value = mock_client
+
+    res = generate_seo_metadata_pack(topic="Python 3.12 Guide", channel_name="Dev Lab")
+    assert res["success"] is True
+    mock_client.generate_seo_metadata_pack.assert_called_once_with(
+        topic="Python 3.12 Guide",
+        key_takeaways=None,
+        channel_name="Dev Lab",
+        affiliate_links=None,
+    )
+
+
+@pytest.mark.asyncio
+async def test_server_resources_registered():
+    """Verify that dynamic MCP resources (youtube:// URIs) are registered."""
+    templates = await mcp.list_resource_templates()
+    uri_templates = {t.uri_template for t in templates}
+    expected_uris = {
+        "youtube://trending/{category}",
+        "youtube://channel/{handle}/playbook",
+        "youtube://niche/{niche}/blueprint",
+    }
+    assert expected_uris.issubset(uri_templates)
+
+
 @pytest.mark.asyncio
 async def test_server_prompts_registered():
     """Verify that beginner and creator prompts are registered."""
@@ -390,4 +438,5 @@ async def test_server_prompts_registered():
         "competitor_playbook_prompt",
     }
     assert expected_prompts.issubset(prompt_names)
+
 

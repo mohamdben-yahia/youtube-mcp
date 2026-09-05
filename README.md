@@ -57,12 +57,20 @@ Starting a YouTube channel without research leads to months of making videos nob
   - **Audience Flaws & Gaps**: Mines real viewer comments on their top video to find unanswered questions and complaints.
   - **Beginner Replication Playbook**: Provides exact title frameworks and differentiation angles for a new creator to model or compete.
 - **📝 Retention Script Generator (`generate_retention_script_outline`)**: Generates an 8-12 minute psychology-backed video outline modeled on competitor hooks and real viewer comments to maximize watch time.
+- **🖼️ High-CTR Thumbnail Concepts (`generate_thumbnail_concepts`)**: Deconstructs contrast and color psychology to output 3 distinct thumbnail visual concepts with ready-to-use Midjourney/DALL-E prompts.
+- **🏷️ Complete Upload SEO Pack (`generate_seo_metadata_pack`)**: Generates 3 mobile-optimized titles (<50 chars), timestamped chapter description, top 15 ranked tags, and engagement pinned comment.
 - **💰 Niche Sponsor Radar (`discover_niche_sponsors`)**: Scans top videos in any niche to identify active paying brand sponsors, promo codes, tracking links, and sponsorship frequency.
 - **📊 Channel Strategy & Playbook Auditor (`audit_channel_strategy`)**: Fast audit of a creator's publishing cadence, title formulas, and monetization funnel.
 - **⚔️ Competitor Benchmarking (`compare_channels`)**: Perform head-to-head performance comparisons across 2 to 5 rival channels.
 - **💬 Audience Sentiment & Pain-Point Mining (`analyze_audience_sentiment`)**: Mine comments for unanswered questions, viewer content requests, and recurring audience problems.
 - **✂️ Video Chapters & Viral Shorts Extractor (`extract_shorts_clips`)**: Generate timestamped chapters and extract top 30-60s punchy Shorts clips from transcripts.
 - **🗺️ Channel Launch Blueprint (`blueprint_new_channel`)**: All-in-one market research and 5-video launch roadmap for beginners.
+
+### 🌐 Dynamic MCP Resources (`youtube://` URIs)
+Exposes live context documents directly to LLMs:
+- **`youtube://trending/{category}`**: Real-time trending videos, rising tags, and keyword analysis for any category.
+- **`youtube://channel/{handle}/playbook`**: Complete reverse-engineered strategy report for any creator handle.
+- **`youtube://niche/{niche}/blueprint`**: Live 5-video launch roadmap and competitor benchmarks for any topic.
 
 ### 🛠️ Core Data & Transcript Tools
 - **📹 Video Details (`get_video_details`)**: Clean metadata (views, likes, human-formatted duration, channel info, tags).
@@ -534,6 +542,41 @@ Scans the top videos in a niche to discover which brands and SaaS companies are 
 
 ---
 
+### `generate_thumbnail_concepts` (High-CTR Packaging & AI Image Prompts)
+Generates 3 distinct thumbnail visual concepts (Curiosity/Anomaly, Threat Avoidance/Mistake, Before-vs-After Split Screen) complete with text overlays, color theory palettes, and ready-to-run prompts for Midjourney / DALL-E / Imagen.
+
+| Parameter | Type | Default | Description |
+| :--- | :--- | :--- | :--- |
+| `video_title` | `string` | *required* | Video title or topic (e.g. `"How I Built a $10k/mo Micro-SaaS"`). |
+| `target_niche` | `string` | `None` | Optional niche context (e.g. `"saas"`, `"coding"`). |
+| `competitor_video_id_or_url` | `string` | `None` | Optional competitor video to evaluate thumbnail benchmarks. |
+
+---
+
+### `generate_seo_metadata_pack` (Complete YouTube Studio Upload Pack)
+Generates the complete metadata package: 3 mobile-optimized titles (<50 chars), timestamped chapter description, top 15 ranked search tags, and an engagement-engineered pinned comment.
+
+| Parameter | Type | Default | Description |
+| :--- | :--- | :--- | :--- |
+| `topic` | `string` | *required* | Primary topic or draft title. |
+| `key_takeaways` | `list[string]` | `None` | Optional list of main points covered. |
+| `channel_name` | `string` | `None` | Creator channel name. |
+| `affiliate_links` | `list[string]` | `None` | List of affiliate URLs or resource links. |
+
+---
+
+## 🌐 Dynamic MCP Resources (`youtube://` URIs)
+
+MCP clients can read dynamic live context resources directly:
+
+| Resource URI | Description |
+| :--- | :--- |
+| `youtube://trending/{category}` | Real-time trending videos, breakout tags, and keywords (e.g. `youtube://trending/tech`). |
+| `youtube://channel/{handle}/playbook` | Full reverse-engineered strategy report for any creator (e.g. `youtube://channel/@mkbhd/playbook`). |
+| `youtube://niche/{niche}/blueprint` | Live 5-video launch roadmap for any niche (e.g. `youtube://niche/notion/blueprint`). |
+
+---
+
 ## 🧠 Built-in Prompts
 
 MCP clients supporting prompts (such as Claude Desktop and Cursor) can trigger automated market research workflows with one click:
@@ -547,6 +590,34 @@ MCP clients supporting prompts (such as Claude Desktop and Cursor) can trigger a
 
 ---
 
+## 🐳 Docker & Remote Hosting (Server-Sent Events)
+
+Deploy this server remotely on **Railway**, **Fly.io**, **Render**, or your own server with Docker:
+
+```bash
+# Build and run with Docker Compose
+docker compose up -d
+
+# Or run directly with Docker
+docker build -t youtube-mcp .
+docker run -d -p 8000:8000 -e YOUTUBE_API_KEY="your_api_key" youtube-mcp
+```
+
+### Remote MCP Client Configuration
+Connect your Claude Desktop or Cursor to your remote instance over SSE:
+
+```json
+{
+  "mcpServers": {
+    "youtube-remote": {
+      "url": "http://your-server-ip:8000/sse"
+    }
+  }
+}
+```
+
+---
+
 ## Running Tests
 
 Run the full pytest suite with:
@@ -555,7 +626,7 @@ Run the full pytest suite with:
 pytest -v
 ```
 
-All tests mock Google API and transcript network requests to prevent burning quota during CI/CD.
+All 65 tests mock Google API and transcript network requests to prevent burning quota during CI/CD.
 
 ---
 

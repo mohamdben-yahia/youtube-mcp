@@ -1,4 +1,5 @@
 import os
+import json
 from typing import Any, Dict, List, Optional
 
 try:
@@ -542,6 +543,80 @@ def discover_niche_sponsors(
         sample_videos=sample_videos,
         region_code=region_code,
     )
+
+
+@mcp.tool()
+def generate_thumbnail_concepts(
+    video_title: str,
+    target_niche: Optional[str] = None,
+    competitor_video_id_or_url: Optional[str] = None,
+) -> Dict[str, Any]:
+    """Generate 3 distinct high-CTR thumbnail visual concepts with AI image prompts.
+
+    Deconstructs title-to-thumbnail contrast, visual color theory, facial expressions,
+    and provides ready-to-use prompts for Midjourney, DALL-E, or Imagen.
+
+    Args:
+        video_title: The title or topic of the video (e.g. 'How I Built a $10k/mo Micro-SaaS').
+        target_niche: Optional niche context (e.g. 'coding', 'business', 'productivity').
+        competitor_video_id_or_url: Optional competitor video to evaluate thumbnail benchmarks.
+    """
+    client = get_client()
+    return client.generate_thumbnail_concepts(
+        video_title=video_title,
+        target_niche=target_niche,
+        competitor_video_id_or_url=competitor_video_id_or_url,
+    )
+
+
+@mcp.tool()
+def generate_seo_metadata_pack(
+    topic: str,
+    key_takeaways: Optional[List[str]] = None,
+    channel_name: Optional[str] = None,
+    affiliate_links: Optional[List[str]] = None,
+) -> Dict[str, Any]:
+    """Generate a complete YouTube Studio upload package: 3 mobile titles, chapters, description, tags, and pinned comment.
+
+    Args:
+        topic: Primary topic or draft title of the video.
+        key_takeaways: Optional list of main points covered in the video.
+        channel_name: Optional creator channel name.
+        affiliate_links: Optional list of affiliate/product URLs.
+    """
+    client = get_client()
+    return client.generate_seo_metadata_pack(
+        topic=topic,
+        key_takeaways=key_takeaways,
+        channel_name=channel_name,
+        affiliate_links=affiliate_links,
+    )
+
+
+# --- Dynamic MCP Resources (youtube:// URIs) ---
+
+@mcp.resource("youtube://trending/{category}")
+def get_trending_resource(category: str) -> str:
+    """Live trending videos and rising keywords context document."""
+    client = get_client()
+    data = client.get_trending_niches(category=category, max_results=15)
+    return json.dumps(data, indent=2)
+
+
+@mcp.resource("youtube://channel/{handle}/playbook")
+def get_channel_playbook_resource(handle: str) -> str:
+    """Live reverse-engineered strategy report for any YouTube creator."""
+    client = get_client()
+    data = client.reverse_engineer_channel(channel_id_or_handle=handle, sample_videos=5)
+    return json.dumps(data, indent=2)
+
+
+@mcp.resource("youtube://niche/{niche}/blueprint")
+def get_niche_blueprint_resource(niche: str) -> str:
+    """Live 5-video launch roadmap and competitor research for any niche."""
+    client = get_client()
+    data = client.blueprint_new_channel(niche=niche)
+    return json.dumps(data, indent=2)
 
 
 # --- MCP Prompts for New Creators ---

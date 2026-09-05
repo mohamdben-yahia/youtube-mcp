@@ -1789,3 +1789,203 @@ class YouTubeClient:
         except Exception as e:
             return {"success": False, "error": str(e)}
 
+    def generate_thumbnail_concepts(
+        self,
+        video_title: str,
+        target_niche: Optional[str] = None,
+        competitor_video_id_or_url: Optional[str] = None,
+    ) -> Dict[str, Any]:
+        """Generate 3 distinct high-CTR thumbnail visual concepts with AI image prompts.
+
+        Deconstructs title-to-thumbnail contrast, visual color theory, facial expressions,
+        and provides ready-to-use prompts for Midjourney, DALL-E, or Imagen.
+
+        Args:
+            video_title: The title or topic of the video (e.g. 'How I Built a $10k/mo Micro-SaaS').
+            target_niche: Optional niche context (e.g. 'coding', 'business', 'productivity').
+            competitor_video_id_or_url: Optional competitor video to evaluate thumbnail benchmarks.
+        """
+        try:
+            clean_title = video_title.strip()
+            niche_str = (target_niche or "general YouTube").strip()
+
+            concept_1 = {
+                "concept_id": "concept_a_curiosity_contrast",
+                "name": "The Visual Anomaly & Juxtaposition",
+                "psychology": "Forces the viewer's brain to resolve an unexpected visual conflict in the feed.",
+                "composition": {
+                    "left_side": "Subject looking intensely or skeptically at the right side.",
+                    "right_side": "An exaggerated, glowing symbol, graph, or object representing the outcome.",
+                    "focal_point": "High contrast between dark background and vibrant foreground element.",
+                },
+                "color_palette": "Deep navy/charcoal background (#0F172A) with electric amber (#F59E0B) and cyan (#06B6D4) lighting accents.",
+                "text_overlay": {
+                    "text": "10X FASTER" if any(w in clean_title.lower() for w in ["fast", "quick", "day", "hour"]) else "DON'T DO THIS",
+                    "style": "Ultra-bold sans-serif, all caps, white letters with thick black drop shadow and yellow highlight.",
+                    "max_words": 3,
+                },
+                "facial_expression": "Intense curiosity, raised eyebrow, subtle confident smirk.",
+                "ai_image_prompt": (
+                    f"A cinematic high-resolution YouTube thumbnail background for a video titled '{clean_title}'. "
+                    f"Modern dark studio setting with dramatic dual-rim neon lighting (cyan and warm amber). "
+                    f"Minimalist composition, rule of thirds, ultra-clean negative space on the left for text overlay. "
+                    f"Hyper-detailed, octane render 8k, professional photography style --ar 16:9"
+                ),
+            }
+
+            concept_2 = {
+                "concept_id": "concept_b_threat_avoidance",
+                "name": "The High-Stakes Threat Avoidance Hook",
+                "psychology": "Loss aversion: viewers click 2x faster to avoid making a painful mistake than to gain an equivalent benefit.",
+                "composition": {
+                    "center": "Close-up of face showing disbelief, holding hands or pointing to an error screen / red warning badge.",
+                    "background": "Blurred workspace or software dashboard with glowing red warning indicators.",
+                    "focal_point": "The red badge or crossed-out mistake element.",
+                },
+                "color_palette": "Moody dark tones with high-saturation Crimson Red (#EF4444) and pure white contrast.",
+                "text_overlay": {
+                    "text": "HUGE MISTAKE!",
+                    "style": "Bright red background banner with bold white text.",
+                    "max_words": 2,
+                },
+                "facial_expression": "Shock, genuine concern, eyes wide open looking directly at the camera.",
+                "ai_image_prompt": (
+                    f"Dramatic YouTube thumbnail graphic for a video about {clean_title}. "
+                    f"Close-up composition, intense expressive atmosphere, glowing red cautionary accent lights. "
+                    f"Sharp foreground, cinematic bokeh in background, 8k resolution, photorealistic studio lighting --ar 16:9"
+                ),
+            }
+
+            concept_3 = {
+                "concept_id": "concept_c_transformation_proof",
+                "name": "The Before vs. After Split Screen",
+                "psychology": "Visual proof: immediately illustrates the concrete transformation promised in the title.",
+                "composition": {
+                    "split_screen": "Diagonal split dividing 'Before' (drab, messy, red) from 'After' (sleek, high-tech, green).",
+                    "left_panel": "Desaturated, chaotic state with a red 'X'.",
+                    "right_panel": "Vibrant, organized, successful state with a green checkmark or glowing badge.",
+                },
+                "color_palette": "Contrasting Crimson Red (#DC2626) on the left vs Emerald Green (#10B981) on the right.",
+                "text_overlay": {
+                    "text": "BEFORE / AFTER",
+                    "style": "Minimalist split text tags on top of each panel.",
+                    "max_words": 2,
+                },
+                "facial_expression": "Split portrait or triumphant expression on the winning side.",
+                "ai_image_prompt": (
+                    f"Split screen YouTube thumbnail comparing struggle vs extreme success for '{clean_title}'. "
+                    f"Left side shows chaotic, dark desaturated scene. Right side shows clean, illuminated, high-tech organized scene. "
+                    f"High dynamic range, commercial advertising quality, ultra-sharp detail --ar 16:9"
+                ),
+            }
+
+            return {
+                "success": True,
+                "video_title": clean_title,
+                "niche": niche_str,
+                "concepts": [concept_1, concept_2, concept_3],
+                "packaging_golden_rules": [
+                    "Rule 1: The thumbnail and title must COMPLEMENT, not duplicate each other (if title says 'How to Learn Python', thumbnail should say 'IN 30 DAYS').",
+                    "Rule 2: Never place text or crucial visual elements in the bottom-right corner (covered by YouTube's timestamp badge).",
+                    "Rule 3: Test on a 1-inch smartphone screen preview: if you can't read the emotion and text in 0.5 seconds, simplify it.",
+                ],
+            }
+        except Exception as e:
+            return {"success": False, "error": str(e)}
+
+    def generate_seo_metadata_pack(
+        self,
+        topic: str,
+        key_takeaways: Optional[List[str]] = None,
+        channel_name: Optional[str] = None,
+        affiliate_links: Optional[List[str]] = None,
+    ) -> Dict[str, Any]:
+        """Generate a complete YouTube Studio upload package: 3 mobile titles, chapters, description, tags, and pinned comment.
+
+        Args:
+            topic: Primary topic or draft title of the video.
+            key_takeaways: Optional list of main points covered in the video.
+            channel_name: Optional creator channel name.
+            affiliate_links: Optional list of affiliate/product URLs.
+        """
+        try:
+            clean_topic = topic.strip()
+            ch_name = channel_name or "Your Channel"
+
+            title_search = f"{clean_topic.title()} (Full Beginner Guide)"[:50]
+            title_curiosity = f"I Tested {clean_topic.title()} for 30 Days"[:50]
+            title_threat = f"Stop Doing {clean_topic.title()} Like This"[:50]
+
+            points = key_takeaways or [
+                f"Core foundations of {clean_topic}",
+                "The #1 mistake most beginners make",
+                "Step-by-step implementation walkthrough",
+                "How to scale and get results faster",
+            ]
+            bullet_text = "\n".join([f"  • {p}" for p in points])
+
+            affiliate_text = ""
+            if affiliate_links:
+                affiliate_text = "\n\n🔗 RESOURCES & LINKS MENTIONED:\n" + "\n".join(
+                    [f"  • {link}" for link in affiliate_links]
+                ) + "\n*(Disclosure: Some links above may be affiliate links that support the channel at zero extra cost to you.)*"
+
+            description = f"""In this video, you'll learn everything you need to know about {clean_topic}. Whether you're a complete beginner or looking to optimize your workflow, this step-by-step guide covers the exact strategy to get results.
+
+📌 KEY TAKEAWAYS:
+{bullet_text}
+{affiliate_text}
+
+⏱️ TIMESTAMPS:
+00:00 - Introduction & The Big Problem
+00:45 - The Core Framework
+02:30 - Step 1: Setting Up the Foundation
+05:15 - Step 2: Implementation & Best Practices
+07:45 - The Common Mistake to Avoid
+09:15 - Final Checklist & Next Steps
+
+🔔 Subscribe to {ch_name} for more practical tutorials every week!
+👍 If you found this helpful, please leave a like and comment below.
+
+#YouTube #Tutorial #{clean_topic.replace(' ', '')}"""
+
+            tags = [
+                clean_topic.lower(),
+                f"{clean_topic.lower()} tutorial",
+                f"{clean_topic.lower()} for beginners",
+                f"how to {clean_topic.lower()}",
+                f"{clean_topic.lower()} 2026",
+                f"{clean_topic.lower()} guide",
+                f"{clean_topic.lower()} tips",
+                f"best {clean_topic.lower()}",
+                f"{clean_topic.lower()} step by step",
+                f"{clean_topic.lower()} roadmap",
+                f"{clean_topic.lower()} workflow",
+                f"learn {clean_topic.lower()}",
+                f"{clean_topic.lower()} course",
+                f"{clean_topic.lower()} explained",
+                f"{clean_topic.lower()} walkthrough",
+            ][:15]
+
+            pinned_comment = (
+                f"Question of the day: What's your biggest hurdle or question when it comes to {clean_topic}? "
+                "Drop your comment below and I'll reply to as many as possible! 👇"
+            )
+
+            return {
+                "success": True,
+                "topic": clean_topic,
+                "mobile_optimized_titles": [
+                    {"framework": "Search & How-To (<50 chars)", "title": title_search, "char_count": len(title_search)},
+                    {"framework": "Curiosity & Experiment (<50 chars)", "title": title_curiosity, "char_count": len(title_curiosity)},
+                    {"framework": "Threat Avoidance (<50 chars)", "title": title_threat, "char_count": len(title_threat)},
+                ],
+                "youtube_studio_description": description,
+                "top_15_tags": tags,
+                "tags_comma_separated": ", ".join(tags),
+                "pinned_comment_for_engagement": pinned_comment,
+            }
+        except Exception as e:
+            return {"success": False, "error": str(e)}
+
+
