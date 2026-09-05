@@ -36,13 +36,6 @@ authors = [
     { name = "Mohamed Benyahia", email = "benyahiamohamd@gmail.com" }
 ]
 
-[project.urls]
-Homepage = "https://github.com/mohamdben-yahia/youtube-mcp"
-Documentation = "https://github.com/mohamdben-yahia/youtube-mcp#readme"
-Repository = "https://github.com/mohamdben-yahia/youtube-mcp"
-Issues = "https://github.com/mohamdben-yahia/youtube-mcp/issues"
-Changelog = "https://github.com/mohamdben-yahia/youtube-mcp/releases"
-
 dependencies = [
     "mcp[cli]>=1.2.0",
     "google-api-python-client>=2.110.0",
@@ -50,6 +43,13 @@ dependencies = [
     "pydantic>=2.0.0",
     "python-dotenv>=1.0.0",
 ]
+
+[project.urls]
+Homepage = "https://github.com/mohamdben-yahia/youtube-mcp"
+Documentation = "https://github.com/mohamdben-yahia/youtube-mcp#readme"
+Repository = "https://github.com/mohamdben-yahia/youtube-mcp"
+Issues = "https://github.com/mohamdben-yahia/youtube-mcp/issues"
+Changelog = "https://github.com/mohamdben-yahia/youtube-mcp/releases"
 
 [project.optional-dependencies]
 dev = [
