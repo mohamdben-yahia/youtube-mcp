@@ -1623,22 +1623,29 @@ class YouTubeClient:
             competitor_hook = None
             viewer_objections = []
 
-            if competitor_video_id_or_url:
-                cid = extract_video_id(competitor_video_id_or_url)
-                if cid:
-                    hook_res = fetch_transcript(cid, output_format="text", end_seconds=60.0)
-                    if hook_res.get("success") and hook_res.get("content"):
-                        competitor_hook = hook_res["content"].replace("\n", " ")
-
-                    sentiment = self.analyze_audience_sentiment(video_id_or_url=cid, max_comments=30)
-                    if sentiment.get("success"):
-                        viewer_objections = [
-                            q.get("comment") for q in sentiment.get("top_audience_questions", [])[:3]
-                        ] + [
-                            p.get("comment") for p in sentiment.get("common_pain_points", [])[:2]
-                        ]
-
             clean_topic = video_title_or_topic.strip()
+
+            target_comp_id = None
+            if competitor_video_id_or_url:
+                target_comp_id = extract_video_id(competitor_video_id_or_url)
+            else:
+                # Search for the top ranking video on YouTube to model real data
+                search_top = self.search(query=clean_topic, max_results=1, search_type="video", order="relevance")
+                if search_top.get("success") and search_top.get("results"):
+                    target_comp_id = search_top["results"][0].get("id")
+
+            if target_comp_id:
+                hook_res = fetch_transcript(target_comp_id, output_format="text", end_seconds=60.0)
+                if hook_res.get("success") and hook_res.get("content"):
+                    competitor_hook = hook_res["content"].replace("\n", " ")
+
+                sentiment = self.analyze_audience_sentiment(video_id_or_url=target_comp_id, max_comments=30)
+                if sentiment.get("success"):
+                    viewer_objections = [
+                        q.get("comment") for q in sentiment.get("top_audience_questions", [])[:3]
+                    ] + [
+                        p.get("comment") for p in sentiment.get("common_pain_points", [])[:2]
+                    ]
 
             script_structure = [
                 {
@@ -1819,6 +1826,31 @@ class YouTubeClient:
             clean_title = video_title.strip()
             niche_str = (target_niche or "general YouTube").strip()
 
+            # Query real YouTube videos to inspect actual thumbnail competition
+            competitor_benchmarks = []
+            if competitor_video_id_or_url:
+                cid = extract_video_id(competitor_video_id_or_url)
+                if cid:
+                    det = self.get_video_details([cid])
+                    if det.get("success") and det.get("videos"):
+                        v0 = det["videos"][0]
+                        competitor_benchmarks.append({
+                            "title": v0.get("title"),
+                            "views": v0.get("view_count"),
+                            "thumbnail_url": v0.get("thumbnail_url"),
+                            "channel": v0.get("channel_title"),
+                        })
+            if not competitor_benchmarks:
+                search_top = self.search(query=clean_title, max_results=3, search_type="video", order="relevance")
+                if search_top.get("success"):
+                    for item in search_top.get("results", []):
+                        competitor_benchmarks.append({
+                            "title": item.get("title"),
+                            "thumbnail_url": item.get("thumbnail_url"),
+                            "channel": item.get("channel_title"),
+                            "url": item.get("url"),
+                        })
+
             concept_1 = {
                 "concept_id": "concept_a_curiosity_contrast",
                 "name": "The Visual Anomaly & Juxtaposition",
@@ -1893,6 +1925,7 @@ class YouTubeClient:
                 "success": True,
                 "video_title": clean_title,
                 "niche": niche_str,
+                "real_competitor_thumbnails_analyzed": competitor_benchmarks,
                 "concepts": [concept_1, concept_2, concept_3],
                 "packaging_golden_rules": [
                     "Rule 1: The thumbnail and title must COMPLEMENT, not duplicate each other (if title says 'How to Learn Python', thumbnail should say 'IN 30 DAYS').",
@@ -1959,23 +1992,37 @@ class YouTubeClient:
 
 #YouTube #Tutorial #{clean_topic.replace(' ', '')}"""
 
-            tags = [
+            # Query real YouTube videos to extract live competitor tags & titles
+            real_tags = []
+            competitor_titles = []
+            try:
+                search_res = self.search(query=clean_topic, max_results=5, search_type="video", order="relevance")
+                if search_res.get("success"):
+                    video_ids = [item["id"] for item in search_res.get("results", []) if item.get("id")]
+                    competitor_titles = [item["title"] for item in search_res.get("results", []) if item.get("title")]
+                    if video_ids:
+                        details_res = self.get_video_details(video_ids=video_ids)
+                        if details_res.get("success"):
+                            for vid in details_res.get("videos", []):
+                                for tag in vid.get("tags", []):
+                                    tag_clean = tag.strip().lower()
+                                    if tag_clean and tag_clean not in real_tags:
+                                        real_tags.append(tag_clean)
+            except Exception:
+                pass
+
+            # Combine discovered real tags with topical keywords
+            combined_tags = list(real_tags[:10])
+            for fallback_tag in [
                 clean_topic.lower(),
                 f"{clean_topic.lower()} tutorial",
                 f"{clean_topic.lower()} for beginners",
                 f"how to {clean_topic.lower()}",
-                f"{clean_topic.lower()} 2026",
                 f"{clean_topic.lower()} guide",
-                f"{clean_topic.lower()} tips",
-                f"best {clean_topic.lower()}",
-                f"{clean_topic.lower()} step by step",
-                f"{clean_topic.lower()} roadmap",
-                f"{clean_topic.lower()} workflow",
-                f"learn {clean_topic.lower()}",
-                f"{clean_topic.lower()} course",
-                f"{clean_topic.lower()} explained",
-                f"{clean_topic.lower()} walkthrough",
-            ][:15]
+            ]:
+                if fallback_tag not in combined_tags:
+                    combined_tags.append(fallback_tag)
+            tags = combined_tags[:15]
 
             pinned_comment = (
                 f"Question of the day: What's your biggest hurdle or question when it comes to {clean_topic}? "
@@ -1985,6 +2032,8 @@ class YouTubeClient:
             return {
                 "success": True,
                 "topic": clean_topic,
+                "ranking_competitors_analyzed": competitor_titles[:3],
+                "real_competitor_tags_extracted": len(real_tags),
                 "mobile_optimized_titles": [
                     {"framework": "Search & How-To (<50 chars)", "title": title_search, "char_count": len(title_search)},
                     {"framework": "Curiosity & Experiment (<50 chars)", "title": title_curiosity, "char_count": len(title_curiosity)},
@@ -2285,6 +2334,21 @@ Engineered from proven viral outlier topics that generated breakout views with l
         if not titles:
             return {"success": False, "error": "Please provide at least one title to evaluate."}
 
+        # Query real YouTube videos in this niche to extract live high-CTR benchmark patterns
+        competitor_title_benchmarks = []
+        try:
+            niche_query = target_niche or titles[0]
+            search_bench = self.search(query=niche_query, max_results=5, search_type="video", order="viewCount")
+            if search_bench.get("success"):
+                for v in search_bench.get("results", []):
+                    competitor_title_benchmarks.append({
+                        "proven_viral_title": v.get("title"),
+                        "channel": v.get("channel_title"),
+                        "views": v.get("view_count") or v.get("views"),
+                    })
+        except Exception:
+            pass
+
         curiosity_keywords = {"secret", "hidden", "truth", "why", "reveal", "nobody", "actually", "tested", "happened", "shocking", "real reason"}
         threat_keywords = {"stop", "mistake", "don't", "avoid", "warning", "ruin", "waste", "quit", "never", "worst", "fail", "trap"}
         power_keywords = {"ultimate", "insane", "effortless", "simple", "free", "genius", "blueprint", "master", "step-by-step", "definitive", "fast"}
@@ -2385,6 +2449,7 @@ Engineered from proven viral outlier topics that generated breakout views with l
         return {
             "success": True,
             "target_niche": target_niche or "General",
+            "live_viral_title_benchmarks": competitor_title_benchmarks,
             "total_titles_tested": len(evaluated),
             "predicted_winner": {
                 "title": winner,
@@ -2613,7 +2678,7 @@ Engineered from proven viral outlier topics that generated breakout views with l
         niche_or_channel: str,
         target_goal: str = "growth",
     ) -> Dict[str, Any]:
-        """Generate high-engagement Community Tab polls, quizzes, and discussion posts.
+        """Generate high-engagement Community Tab polls, quizzes, and discussion posts grounded in real viewer discussions.
 
         Leverages YouTube's Community Tab algorithm, which distributes polls into the home feeds
         of non-subscribers, creating viral discovery for new channels between video releases.
@@ -2623,6 +2688,25 @@ Engineered from proven viral outlier topics that generated breakout views with l
             target_goal: Goal for the community strategy ('growth', 'video_validation', 'audience_loyalty').
         """
         clean_target = niche_or_channel.strip()
+
+        real_audience_discussions_mined = []
+        try:
+            search_res = self.search(query=clean_target, max_results=1, search_type="video")
+            items = search_res.get("results", []) or search_res.get("videos", [])
+            if items:
+                top_vid_id = items[0].get("video_id") or items[0].get("id")
+                if top_vid_id:
+                    com_res = self.get_video_comments(video_id=top_vid_id, max_results=10)
+                    for c in com_res.get("comments", [])[:5]:
+                        c_text = c.get("text", "")
+                        if len(c_text) > 15:
+                            real_audience_discussions_mined.append({
+                                "source_video": items[0].get("title"),
+                                "comment_snippet": c_text[:140] + "..." if len(c_text) > 140 else c_text,
+                                "author": c.get("author", "Viewer"),
+                            })
+        except Exception:
+            pass
 
         templates = [
             {
@@ -2678,6 +2762,7 @@ Engineered from proven viral outlier topics that generated breakout views with l
             "success": True,
             "niche_or_channel": clean_target,
             "target_goal": target_goal,
+            "real_audience_discussions_mined": real_audience_discussions_mined,
             "community_tab_strategy": [
                 "YouTube distributes community polls to home feeds of users who haven't even watched your videos yet.",
                 "Channels with under 10k subs can regularly get 5x to 20x more poll votes than their subscriber count.",
@@ -2853,15 +2938,56 @@ Engineered from proven viral outlier topics that generated breakout views with l
             "changed my life", "don't buy", "worst", "shocking"
         ]
 
+        from datetime import datetime, timezone
+
+        # Query live YouTube search to inspect real ranking video ages and views
+        ranking_competitors = []
+        is_empirical_search = False
+        is_empirical_browse = False
+        avg_age_days = None
+
+        try:
+            search_res = self.search(query=clean_topic, max_results=5, search_type="video", order="relevance")
+            if search_res.get("success") and search_res.get("results"):
+                vids = search_res["results"]
+                now = datetime.now(timezone.utc)
+                ages = []
+                for v in vids:
+                    pub = v.get("published_at")
+                    age_days = 0
+                    if pub:
+                        try:
+                            created = datetime.fromisoformat(pub.replace("Z", "+00:00"))
+                            age_days = max((now - created).days, 1)
+                            ages.append(age_days)
+                        except Exception:
+                            pass
+                    ranking_competitors.append({
+                        "title": v.get("title"),
+                        "channel": v.get("channel_title"),
+                        "published_at": pub,
+                        "age_in_days": age_days,
+                        "url": v.get("url"),
+                    })
+
+                if ages:
+                    avg_age_days = sum(ages) / len(ages)
+                    if avg_age_days >= 365:
+                        is_empirical_search = True
+                    elif avg_age_days <= 60:
+                        is_empirical_browse = True
+        except Exception:
+            pass
+
         search_score = sum(1 for kw in search_indicators if kw in lower)
         browse_score = sum(1 for kw in browse_indicators if kw in lower)
 
-        if search_score > browse_score:
+        if is_empirical_search or (search_score > browse_score and not is_empirical_browse):
             classification = "EVERGREEN SEARCH (Intent-Driven Traffic)"
             longevity = "3 to 5+ Years (Passive, continuous views from Google and YouTube search)"
             rpm_range = "$8.00 - $25.00+ per 1,000 views (High commercial search intent)"
             algorithm_strategy = "Target exact viewer search queries in the title, first 2 lines of description, and spoken script."
-        elif browse_score > search_score:
+        elif is_empirical_browse or (browse_score > search_score):
             classification = "BROWSE & SUGGESTED (Viral Home Feed Traffic)"
             longevity = "7 to 21 Days (High initial spike in home feeds, decaying after impressions saturate)"
             rpm_range = "$2.50 - $7.00 per 1,000 views (Broader entertainment/curiosity audience)"
@@ -2882,6 +3008,11 @@ Engineered from proven viral outlier topics that generated breakout views with l
             "traffic_classification": classification,
             "longevity_expectation": longevity,
             "estimated_rpm_range": rpm_range,
+            "empirical_evidence": {
+                "ranking_videos_analyzed": len(ranking_competitors),
+                "average_competitor_video_age_days": round(avg_age_days) if avg_age_days else None,
+                "top_ranking_competitors": ranking_competitors[:3],
+            },
             "primary_traffic_driver": "Search Queries" if "SEARCH" in classification else "Home Feed & Recommended Videos",
             "packaging_recommendations": {
                 "search_optimized_title": title_search,
@@ -2916,6 +3047,31 @@ Engineered from proven viral outlier topics that generated breakout views with l
         clean_niche = niche.strip()
         audience = target_audience or "beginners"
         skill = main_skill_or_topic or clean_niche
+
+        # Query real YouTube videos to extract actual digital products/affiliates in this niche
+        competitor_offers_detected = []
+        try:
+            search_res = self.search(query=clean_niche, max_results=5, search_type="video", order="viewCount")
+            if search_res.get("success"):
+                v_ids = [item["id"] for item in search_res.get("results", []) if item.get("id")]
+                if v_ids:
+                    details_res = self.get_video_details(video_ids=v_ids)
+                    if details_res.get("success"):
+                        for vid in details_res.get("videos", []):
+                            desc = vid.get("description", "")
+                            for line in desc.splitlines():
+                                line_lower = line.lower()
+                                if any(p in line_lower for p in ["gumroad", "notion.so", "substack", "beehiiv", "teachable", "patreon", "skool", "course", "template", "cheat sheet", "consulting", "calendly"]):
+                                    clean_line = line.strip()
+                                    if 15 < len(clean_line) < 140:
+                                        competitor_offers_detected.append({
+                                            "video_title": vid.get("title"),
+                                            "channel": vid.get("channel_title"),
+                                            "detected_offer_link": clean_line,
+                                        })
+                                        break
+        except Exception:
+            pass
 
         offer_tier_1 = {
             "tier": "Tier 1: Free Lead Magnet (Email Newsletter / Community Growth)",
@@ -2957,6 +3113,7 @@ Engineered from proven viral outlier topics that generated breakout views with l
             "success": True,
             "niche": clean_niche,
             "target_audience": audience,
+            "real_competitor_offers_discovered": competitor_offers_detected,
             "monetization_philosophy": (
                 "Do not wait for YouTube AdSense. With 500 views per video, selling just 3 copies of a $29 digital template "
                 "makes you more money than 30,000 AdSense views."
@@ -2990,6 +3147,19 @@ Engineered from proven viral outlier topics that generated breakout views with l
         """
         clean_topic = core_topic.strip()
         count = max(min(video_count, 6), 3)
+
+        live_competitor_videos_modeled = []
+        try:
+            search_res = self.search(query=clean_topic, max_results=count, search_type="video")
+            items = search_res.get("results", []) or search_res.get("videos", [])
+            for v in items:
+                live_competitor_videos_modeled.append({
+                    "video_id": v.get("video_id") or v.get("id"),
+                    "title": v.get("title"),
+                    "channel": v.get("channel_title"),
+                })
+        except Exception:
+            pass
 
         modules = [
             {
@@ -3061,6 +3231,7 @@ Engineered from proven viral outlier topics that generated breakout views with l
                 "playlist_description": playlist_desc,
             },
             "serialized_video_roadmap": selected_videos,
+            "live_competitor_videos_modeled": live_competitor_videos_modeled,
             "algorithmic_binge_rules": [
                 "1. Add every video in this series to a dedicated YouTube Playlist and set it as an official Series Playlist.",
                 "2. The last 15 seconds of each video MUST display an End Screen card linking specifically to the next video in this playlist.",

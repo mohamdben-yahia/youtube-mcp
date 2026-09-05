@@ -901,6 +901,7 @@ def test_analyze_community_posts():
     res = client.analyze_community_posts(niche_or_channel="ai automation", target_goal="growth")
     assert res["success"] is True
     assert res["niche_or_channel"] == "ai automation"
+    assert "real_audience_discussions_mined" in res
     assert len(res["ready_to_use_community_templates"]) == 4
     assert res["ready_to_use_community_templates"][0]["framework_name"] == "The Instant-Identity Poll (Maximum Viral Reach)"
     assert len(res["ready_to_use_community_templates"][0]["options"]) == 4
@@ -987,6 +988,7 @@ def test_design_binge_playlist():
     res = client.design_binge_playlist(core_topic="Building AI Agents with Python", video_count=5)
     assert res["success"] is True
     assert res["total_videos_in_series"] == 5
+    assert "live_competitor_videos_modeled" in res
     assert len(res["serialized_video_roadmap"]) == 5
     assert res["serialized_video_roadmap"][0]["role"] == "The Foundation & Quick Win"
     assert "cliffhanger_bridge_script" in res["serialized_video_roadmap"][0]
