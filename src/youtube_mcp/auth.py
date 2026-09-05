@@ -119,10 +119,10 @@ def build_secured_starlette_app(
         if env_hosts:
             hosts.extend([h.strip() for h in env_hosts.split(",") if h.strip()])
         
-        # If binding to all interfaces (0.0.0.0) or custom hosts, disable strict DNS rebinding or allow all
+        # Disable strict DNS rebinding for local development/IP access unless explicitly enabled
         disable_dns_protection = (
-            os.getenv("MCP_DISABLE_DNS_PROTECTION", "false").lower() in ("true", "1", "yes")
-            or host == "0.0.0.0"
+            os.getenv("MCP_DISABLE_DNS_PROTECTION", "true").lower() in ("true", "1", "yes")
+            or host in ("0.0.0.0", "127.0.0.1", "localhost")
         )
         if disable_dns_protection:
             security_settings = TransportSecuritySettings(enable_dns_rebinding_protection=False)
