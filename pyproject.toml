@@ -1,13 +1,48 @@
 [project]
 name = "youtube-mcp"
-version = "0.1.0"
-description = "High-performance Model Context Protocol (MCP) server for YouTube Data API v3 and transcripts"
+version = "1.0.0"
+description = "The most comprehensive YouTube MCP server for Claude, Cursor & AI agents — 30 tools for creator analytics, channel audits, viral video research, SEO metadata, transcript extraction, competitor intelligence, thumbnail generation, and monetization strategy."
 readme = "README.md"
 requires-python = ">=3.10"
 license = { text = "MIT" }
+keywords = [
+    "youtube", "mcp", "mcp-server", "model-context-protocol",
+    "claude", "cursor", "ai-agent", "llm-tools",
+    "youtube-api", "youtube-data-api", "youtube-analytics",
+    "youtube-transcript", "youtube-subtitles", "youtube-captions",
+    "youtube-seo", "youtube-research", "youtube-growth",
+    "youtube-creator", "youtube-automation", "youtube-tools",
+    "channel-analytics", "video-analytics", "competitor-analysis",
+    "content-strategy", "viral-video", "thumbnail-generator",
+    "audience-sentiment", "monetization", "sponsor-discovery",
+    "shorts", "trending", "niche-research",
+]
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "Intended Audience :: Developers",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Software Development :: Libraries",
+    "Topic :: Internet :: WWW/HTTP",
+    "Topic :: Multimedia :: Video",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+]
 authors = [
     { name = "YouTube MCP Contributors" }
 ]
+
+[project.urls]
+Homepage = "https://github.com/yourusername/youtube-mcp"
+Documentation = "https://github.com/yourusername/youtube-mcp#readme"
+Repository = "https://github.com/yourusername/youtube-mcp"
+Issues = "https://github.com/yourusername/youtube-mcp/issues"
+Changelog = "https://github.com/yourusername/youtube-mcp/releases"
+
 dependencies = [
     "mcp[cli]>=1.2.0",
     "google-api-python-client>=2.110.0",

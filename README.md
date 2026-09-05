@@ -1,10 +1,68 @@
-# YouTube MCP Server: Market Research & Channel Launch Engine for New Creators
+<div align="center">
 
-A production-ready **Model Context Protocol (MCP)** server providing AI assistants (Claude Desktop, Cursor, Antigravity, and custom LLM agents) high-signal, token-efficient access to YouTube data.
+# 🎬 YouTube MCP Server
 
-**Specifically architected for aspiring creators and new YouTubers** to conduct deep, data-driven market research before recording a single video: validate niche viability, find realistic model channels (1k–300k subscribers), uncover viral outlier video ideas, mine audience pain points directly from comments, and generate a validated 5-video launch blueprint.
+### The Most Powerful YouTube API Server for AI Agents
 
-Built with **MCPServer / FastMCP** (`mcp>=1.2.0`), **Google API Client** (`google-api-python-client`), and **`youtube-transcript-api`**.
+**30 tools · 3 dynamic resources · 3 prompts · 91 tests · 100% live YouTube Data API**
+
+[![Python 3.10+](https://img.shields.io/badge/Python-3.10%2B-3776AB?style=for-the-badge&logo=python&logoColor=white)](https://python.org)
+[![MCP Protocol](https://img.shields.io/badge/MCP-Model_Context_Protocol-blueviolet?style=for-the-badge)](https://modelcontextprotocol.io)
+[![License: MIT](https://img.shields.io/badge/License-MIT-green?style=for-the-badge)](LICENSE)
+[![Tests](https://img.shields.io/badge/Tests-91_Passed-success?style=for-the-badge)](tests/)
+[![Claude Desktop](https://img.shields.io/badge/Claude-Desktop-orange?style=for-the-badge)](https://claude.ai)
+[![Cursor](https://img.shields.io/badge/Cursor-IDE-blue?style=for-the-badge)](https://cursor.com)
+
+</div>
+
+---
+
+> **YouTube MCP Server** is a production-ready [Model Context Protocol (MCP)](https://modelcontextprotocol.io) server that gives AI assistants — **Claude Desktop**, **Cursor**, **Windsurf**, **Antigravity**, and any MCP-compatible LLM agent — deep, real-time access to **YouTube Data API v3**, **video transcripts**, **audience analytics**, **competitor intelligence**, **SEO metadata generation**, and **creator monetization strategy**.
+>
+> Built for **YouTube creators**, **content strategists**, **growth agencies**, and **developers** building AI-powered YouTube tools.
+
+---
+
+## ⚡ Why YouTube MCP Server?
+
+| Feature | YouTube MCP Server | Other YouTube Tools |
+| :--- | :---: | :---: |
+| **MCP-native** (Claude, Cursor, Windsurf, LLM agents) | ✅ | ❌ |
+| **30 specialized creator & research tools** | ✅ | 3–5 basic tools |
+| **Live YouTube Data API** (real tags, real thumbnails, real comments) | ✅ | Static/mock data |
+| **Transcript extraction without API key** | ✅ | Requires OAuth |
+| **Competitor reverse engineering** | ✅ | ❌ |
+| **Viral outlier detection** (2.5x–10x view spikes) | ✅ | ❌ |
+| **SEO metadata pack generation** (titles, tags, chapters) | ✅ | ❌ |
+| **Thumbnail concept generator** (with Midjourney/DALL-E prompts) | ✅ | ❌ |
+| **Sponsor discovery & pitch architect** | ✅ | ❌ |
+| **International cross-language arbitrage** | ✅ | ❌ |
+| **Sub-1k subscriber monetization funnels** | ✅ | ❌ |
+| **Binge playlist architect** (Session Watch Time optimization) | ✅ | ❌ |
+| **11 Antigravity workflow skills** (full auto-pipeline) | ✅ | ❌ |
+| **Disk-based quota caching** | ✅ | ❌ |
+| **Docker & SSE remote hosting** | ✅ | ❌ |
+| **91 automated tests** | ✅ | Untested |
+
+---
+
+## 📋 Table of Contents
+
+- [⚡ Why YouTube MCP Server?](#-why-youtube-mcp-server)
+- [🎯 5-Step Market Research Workflow](#-built-for-new-creators-the-5-step-market-research-workflow)
+- [🔍 Features & Tool Suite](#features--tool-suite)
+- [📦 Prerequisites](#prerequisites)
+- [🚀 Quickstart](#quickstart)
+- [⚙️ MCP Client Configuration](#mcp-client-configuration) — Claude Desktop, Cursor, Windsurf, Antigravity
+- [📖 Available Tools & Schema](#available-tools--schema) — Full parameter documentation for all 30 tools
+- [🌐 Dynamic MCP Resources](#-dynamic-mcp-resources-youtube-uris)
+- [🧠 Built-in Prompts](#-built-in-prompts)
+- [🐳 Docker & Remote Hosting](#-docker--remote-hosting-server-sent-events)
+- [🧪 Running Tests](#-running-tests)
+- [📦 Complete Tool Index](#-complete-tool-index-30-mcp-tools)
+- [🔌 Compatibility](#-compatibility)
+- [🤖 Antigravity Plugin: 11 Skills](#-antigravity-plugin-11-workflow-skills)
+- [🏗️ Tech Stack](#️-tech-stack)
 
 ---
 
@@ -737,18 +795,127 @@ Connect your Claude Desktop or Cursor to your remote instance over SSE:
 
 ---
 
-## Running Tests
-
-Run the full pytest suite with:
+## 🧪 Running Tests
 
 ```bash
+# Run the full test suite
 pytest -v
+
+# Run with coverage
+pytest -v --tb=short
 ```
 
 All 91 tests mock Google API and transcript network requests to prevent burning quota during CI/CD.
 
 ---
 
-## License
+## 📦 Complete Tool Index (30 MCP Tools)
 
-MIT License.
+<details>
+<summary><strong>Click to expand the full tool reference table</strong></summary>
+
+| # | Tool Name | Category | Description |
+| :-: | :--- | :--- | :--- |
+| 1 | `search_videos` | Search | Search YouTube for videos, channels, or playlists with filters |
+| 2 | `search_channels` | Search | Direct channel discovery with subscriber counts and stats |
+| 3 | `get_video_details` | Data | Retrieve structured metadata for one or more videos |
+| 4 | `get_channel_details` | Data | Channel stats, subscriber count, upload playlist ID |
+| 5 | `get_playlist_items` | Data | Browse videos within any public playlist |
+| 6 | `get_video_comments` | Data | Fetch top-level comments and discussions |
+| 7 | `get_video_transcript` | Transcript | Extract subtitles without API key (text, timestamped, JSON) |
+| 8 | `scout_niche_channels` | Discovery | Multi-niche creator scouting campaigns |
+| 9 | `get_trending_niches` | Discovery | Real-time YouTube trending chart analysis |
+| 10 | `find_breakout_growth_channels` | Discovery | Identify newly created high-velocity channels |
+| 11 | `find_content_gaps` | Research | Find low-competition keywords with outdated ranking videos |
+| 12 | `find_viral_outliers` | Research | Detect 2.5x–10x breakout videos on any channel |
+| 13 | `audit_channel_strategy` | Audit | Reverse-engineer upload cadence, title formulas, monetization |
+| 14 | `reverse_engineer_channel` | Audit | Complete deep channel reverse engineering |
+| 15 | `compare_channels` | Audit | Head-to-head benchmarking of 2–5 rival channels |
+| 16 | `analyze_audience_sentiment` | Audience | Mine comments for pain points, questions, and requests |
+| 17 | `analyze_shorts_to_longform_ratio` | Audit | Diagnose Shorts-to-longform view cannibalization |
+| 18 | `classify_traffic_potential` | Strategy | Classify Evergreen Search vs Browse traffic potential |
+| 19 | `simulate_title_ctr` | Packaging | Grade titles against psychological click triggers |
+| 20 | `generate_thumbnail_concepts` | Packaging | 3 visual concepts with Midjourney/DALL-E prompts |
+| 21 | `generate_seo_metadata_pack` | SEO | Complete upload pack: titles, tags, chapters, description |
+| 22 | `generate_retention_script_outline` | Scripting | 7-beat retention script modeled on competitor hooks |
+| 23 | `predict_retention_dropoffs` | Scripting | WPM pacing analysis with pattern interrupt injection |
+| 24 | `analyze_optimal_upload_time` | Scheduling | Competitor publishing heatmap and Sweet Spot windows |
+| 25 | `analyze_community_posts` | Engagement | Viral polls, quizzes, and discussion strategies |
+| 26 | `extract_shorts_clips` | Repurposing | Auto-generate chapters and viral 30–60s Shorts clips |
+| 27 | `discover_niche_sponsors` | Monetization | Identify active paying brand sponsors in any niche |
+| 28 | `generate_monetization_offers` | Monetization | 3-tier funnel for sub-1k subscriber creators |
+| 29 | `design_binge_playlist` | Architecture | 4–6 video serialized loop with cliffhanger bridges |
+| 30 | `blueprint_new_channel` | Launch | All-in-one market research & 5-video launch roadmap |
+
+</details>
+
+---
+
+## 🔌 Compatibility
+
+YouTube MCP Server works with **any MCP-compatible AI client**:
+
+| Client | Status | Configuration |
+| :--- | :---: | :--- |
+| **Claude Desktop** (Anthropic) | ✅ Supported | `claude_desktop_config.json` |
+| **Cursor IDE** | ✅ Supported | `.cursor/mcp.json` |
+| **Windsurf IDE** | ✅ Supported | MCP settings |
+| **Antigravity IDE** | ✅ Supported | `.agents/mcp_config.json` |
+| **Continue.dev** | ✅ Supported | MCP configuration |
+| **Custom LLM Agents** | ✅ Supported | MCP SDK integration |
+| **Docker / SSE Remote** | ✅ Supported | `http://host:8000/sse` |
+
+---
+
+## 🤖 Antigravity Plugin: 11 Workflow Skills
+
+This repository includes a complete **Antigravity Plugin** (`.agents/plugins/youtube-creator-suite/`) with 11 specialized workflow skills:
+
+| Skill | Description |
+| :--- | :--- |
+| `youtube-full-pipeline` | 🔄 **Auto-orchestrator** — chains all 10 skills end-to-end in 7 phases |
+| `channel-growth-audit` | Diagnose channel health and deliver 90-day turnaround plans |
+| `viral-video-ideation` | Content gaps → traffic classification → title CTR → thumbnail concepts |
+| `competitor-intelligence` | Reverse engineering, head-to-head benchmarks, sponsor discovery |
+| `channel-launch-architect` | 0-to-1 launch: binge playlists, scripts, SEO packs, monetization |
+| `youtube-content-repurposing` | Chapters, viral Shorts extraction, Community Tab polls |
+| `sponsor-pitch-architect` | Rate cards, creative integrations, cold pitch emails |
+| `algorithmic-publishing-scheduler` | Upload heatmaps, Sweet Spot windows, 30-day calendars |
+| `international-arbitrage-expander` | Cross-language gaps, localized metadata, dubbing strategy |
+| `breakout-creator-scout` | High-velocity micro-influencer scouting and partnership rosters |
+| `executive-research-dossier` | Institutional-grade market intelligence reports |
+
+---
+
+## 🏗️ Tech Stack
+
+- **Protocol**: [Model Context Protocol (MCP)](https://modelcontextprotocol.io) via `mcp>=1.2.0`
+- **YouTube API**: `google-api-python-client` (YouTube Data API v3)
+- **Transcripts**: `youtube-transcript-api` (no API key required)
+- **Validation**: `pydantic>=2.0.0`
+- **Environment**: `python-dotenv`
+- **Testing**: `pytest` + `pytest-asyncio` (91 tests, 100% mocked isolation)
+- **Containerization**: Docker + Docker Compose (SSE remote hosting)
+- **CI/CD**: GitHub Actions (Python 3.10–3.13 matrix)
+
+---
+
+## 🌟 Star History
+
+If you find this useful, please ⭐ star the repository — it helps others discover it!
+
+---
+
+## 📄 License
+
+MIT License — free for personal and commercial use.
+
+---
+
+<div align="center">
+
+**Built with ❤️ for YouTube creators, growth agencies, and AI developers**
+
+[Report Bug](../../issues) · [Request Feature](../../issues) · [Discussions](../../discussions)
+
+</div>
