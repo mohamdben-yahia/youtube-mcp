@@ -284,7 +284,7 @@ Add the following to your Claude Desktop configuration file:
       "command": "uv",
       "args": [
         "--directory",
-        "/Users/mohamedbenyahia/Desktop/dev-projects/youtube-mcp",
+        "/path/to/youtube-mcp",
         "run",
         "youtube-mcp"
       ],
@@ -307,7 +307,7 @@ Add to your project's `.cursor/mcp.json` or global MCP settings:
       "command": "uv",
       "args": [
         "--directory",
-        "/Users/mohamedbenyahia/Desktop/dev-projects/youtube-mcp",
+        "/path/to/youtube-mcp",
         "run",
         "youtube-mcp"
       ],
@@ -327,7 +327,7 @@ Add to `.agents/mcp_config.json` (or `~/.gemini/config/mcp_config.json`):
 {
   "mcpServers": {
     "youtube": {
-      "command": "/Users/mohamedbenyahia/Desktop/dev-projects/youtube-mcp/.venv/bin/python",
+      "command": "/path/to/youtube-mcp/.venv/bin/python",
       "args": [
         "-m",
         "youtube_mcp"
