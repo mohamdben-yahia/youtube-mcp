@@ -214,7 +214,7 @@ Exposes live context documents directly to LLMs:
 To automatically install and configure YouTube MCP Server for Claude Desktop via [Smithery](https://smithery.ai):
 
 ```bash
-npx -y @smithery/cli install @mohamedbenyahia/youtube-mcp --client claude
+npx -y @smithery/cli install @mohamdben-yahia/youtube-mcp --client claude
 ```
 
 ### 2. Run with `uvx` (Instant Execution)
@@ -235,7 +235,7 @@ uvx --from . youtube-mcp
 
 ```bash
 # Clone and enter directory
-git clone https://github.com/mohamedbenyahia/youtube-mcp.git
+git clone https://github.com/mohamdben-yahia/youtube-mcp.git
 cd youtube-mcp
 
 # Create virtual environment and install dependencies

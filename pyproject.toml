@@ -37,11 +37,11 @@ authors = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/mohamedbenyahia/youtube-mcp"
-Documentation = "https://github.com/mohamedbenyahia/youtube-mcp#readme"
-Repository = "https://github.com/mohamedbenyahia/youtube-mcp"
-Issues = "https://github.com/mohamedbenyahia/youtube-mcp/issues"
-Changelog = "https://github.com/mohamedbenyahia/youtube-mcp/releases"
+Homepage = "https://github.com/mohamdben-yahia/youtube-mcp"
+Documentation = "https://github.com/mohamdben-yahia/youtube-mcp#readme"
+Repository = "https://github.com/mohamdben-yahia/youtube-mcp"
+Issues = "https://github.com/mohamdben-yahia/youtube-mcp/issues"
+Changelog = "https://github.com/mohamdben-yahia/youtube-mcp/releases"
 
 dependencies = [
     "mcp[cli]>=1.2.0",
