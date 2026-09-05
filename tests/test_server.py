@@ -10,6 +10,7 @@ from youtube_mcp.server import (
     get_channel_details,
     get_playlist_items,
     get_video_comments,
+    get_channel_rss_videos,
 )
 
 
@@ -52,6 +53,7 @@ async def test_server_tools_registered():
         "classify_traffic_potential",
         "generate_monetization_offers",
         "design_binge_playlist",
+        "get_channel_rss_videos",
     }
     assert expected_tools.issubset(tool_names)
 
@@ -579,6 +581,26 @@ def test_design_binge_playlist_tool(mock_get_client):
         core_topic="Build an MCP Server",
         video_count=5,
         target_audience=None,
+    )
+
+
+@patch("youtube_mcp.server.get_client")
+def test_get_channel_rss_videos_tool(mock_get_client):
+    mock_client = MagicMock()
+    mock_client.get_channel_rss.return_value = {
+        "success": True,
+        "source": "youtube_atom_rss",
+        "quota_units_consumed": 0,
+        "videos": [{"video_id": "v123"}],
+    }
+    mock_get_client.return_value = mock_client
+
+    res = get_channel_rss_videos(channel_id="UC123", max_results=10)
+    assert res["success"] is True
+    assert res["quota_units_consumed"] == 0
+    mock_client.get_channel_rss.assert_called_once_with(
+        channel_id="UC123",
+        max_results=10,
     )
 
 

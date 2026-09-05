@@ -829,6 +829,24 @@ def design_binge_playlist(
     )
 
 
+@mcp.tool()
+def get_channel_rss_videos(
+    channel_id: str,
+    max_results: int = 15,
+) -> Dict[str, Any]:
+    """Fetch the latest video uploads from a YouTube channel using the public Atom RSS feed.
+
+    Consumes 0 Google Cloud API quota units and requires NO API key. Ideal for monitoring recent
+    uploads without burning quota.
+
+    Args:
+        channel_id: The YouTube Channel ID (e.g., 'UCuAXFkgsw1L7xaCfnd5JJOw') or channel URL.
+        max_results: Maximum recent uploads to return (1 to 15, default 15).
+    """
+    client = get_client()
+    return client.get_channel_rss(channel_id=channel_id, max_results=max_results)
+
+
 # --- Dynamic MCP Resources (youtube:// URIs) ---
 
 @mcp.resource("youtube://trending/{category}")

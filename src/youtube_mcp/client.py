@@ -3,7 +3,9 @@
 import os
 import json
 import re
-from typing import Any, Dict, List, Optional
+import urllib.request
+import xml.etree.ElementTree as ET
+from typing import Any, Callable, Dict, List, Optional
 from googleapiclient.discovery import build
 from googleapiclient.errors import HttpError
 from youtube_mcp.formatters import (
@@ -18,27 +20,129 @@ from youtube_mcp.cache import get_cache, ResponseCache
 
 
 class YouTubeClient:
-    """Wrapper around googleapiclient for YouTube Data API v3."""
+    """Wrapper around googleapiclient for YouTube Data API v3 with multi-key quota rotation."""
 
-    def __init__(self, api_key: Optional[str] = None, cache: Optional[ResponseCache] = None):
-        self.api_key = api_key or os.getenv("YOUTUBE_API_KEY")
+    def __init__(
+        self,
+        api_key: Optional[str] = None,
+        api_keys: Optional[List[str]] = None,
+        cache: Optional[ResponseCache] = None,
+    ):
+        raw_keys: List[str] = []
+        if api_keys:
+            raw_keys.extend(api_keys)
+        if api_key:
+            raw_keys.extend([k.strip() for k in api_key.split(",") if k.strip()])
+
+        env_keys = os.getenv("YOUTUBE_API_KEYS")
+        if env_keys:
+            raw_keys.extend([k.strip() for k in env_keys.split(",") if k.strip()])
+
+        env_key = os.getenv("YOUTUBE_API_KEY")
+        if env_key:
+            raw_keys.extend([k.strip() for k in env_key.split(",") if k.strip()])
+
+        # Deduplicate keys while preserving order
+        seen = set()
+        self.api_keys: List[str] = []
+        for k in raw_keys:
+            if k and k not in seen:
+                seen.add(k)
+                self.api_keys.append(k)
+
+        self._active_key_index: int = 0
         self._service = None
         self.cache = cache or get_cache()
 
     @property
+    def api_key(self) -> Optional[str]:
+        """Return the current active API key."""
+        if not self.api_keys:
+            return None
+        return self.api_keys[self._active_key_index]
+
+    @api_key.setter
+    def api_key(self, value: Optional[str]):
+        """Set or override the active API key."""
+        if value:
+            clean_keys = [k.strip() for k in value.split(",") if k.strip()]
+            for k in clean_keys:
+                if k not in self.api_keys:
+                    self.api_keys.insert(0, k)
+            if clean_keys:
+                self._active_key_index = self.api_keys.index(clean_keys[0])
+        else:
+            self.api_keys = []
+            self._active_key_index = 0
+        self._service = None
+
+    @property
+    def key_count(self) -> int:
+        """Total number of API keys loaded in the pool."""
+        return len(self.api_keys)
+
+    @property
+    def active_key_index(self) -> int:
+        """0-based index of the currently active API key in the pool."""
+        return self._active_key_index
+
+    def rotate_key(self) -> Optional[str]:
+        """Rotate to the next API key in the pool. Returns the newly activated key."""
+        if not self.api_keys or len(self.api_keys) <= 1:
+            return None
+        self._active_key_index = (self._active_key_index + 1) % len(self.api_keys)
+        self._service = None
+        return self.api_key
+
+    @property
     def service(self):
         if self._service is None:
-            if not self.api_key:
+            active_key = self.api_key
+            if not active_key:
                 raise ValueError(
-                    "YOUTUBE_API_KEY is not set. Please set the YOUTUBE_API_KEY environment variable "
-                    "or pass it when initializing the client."
+                    "YOUTUBE_API_KEY is not set. Please set the YOUTUBE_API_KEY or YOUTUBE_API_KEYS environment variable "
+                    "or pass api_key / api_keys when initializing the client."
                 )
-            self._service = build("youtube", "v3", developerKey=self.api_key)
+            self._service = build("youtube", "v3", developerKey=active_key)
         return self._service
+
+    def _execute_api_request(self, build_request_fn: Callable[[], Any]) -> Any:
+        """Execute a Google API request with automatic key rotation on quota exhaustion.
+
+        If an HTTP 403 (quotaExceeded) error occurs and multiple keys are configured in the pool,
+        this automatically rotates to the next available key and retries the request.
+        """
+        attempts = 0
+        max_attempts = max(1, len(self.api_keys))
+
+        while attempts < max_attempts:
+            try:
+                request = build_request_fn()
+                return request.execute()
+            except HttpError as e:
+                status_code = getattr(getattr(e, "resp", None), "status", None)
+                reason = "unknown"
+                try:
+                    error_details = json.loads(e.content.decode("utf-8"))
+                    errors = error_details.get("error", {}).get("errors", [{}])
+                    reason = errors[0].get("reason", "unknown")
+                except Exception:
+                    pass
+
+                is_quota = (status_code == 403) and (
+                    reason in ("quotaExceeded", "dailyLimitExceeded", "rateLimitExceeded")
+                    or "quota" in str(e).lower()
+                )
+
+                if is_quota and len(self.api_keys) > 1 and attempts < max_attempts - 1:
+                    attempts += 1
+                    self.rotate_key()
+                    continue
+                raise
 
     def _handle_http_error(self, e: HttpError) -> Dict[str, Any]:
         """Convert Google API HttpError into a clean, actionable error response."""
-        status_code = e.resp.status
+        status_code = getattr(getattr(e, "resp", None), "status", None)
         try:
             error_details = json.loads(e.content.decode("utf-8"))
             errors = error_details.get("error", {}).get("errors", [{}])
@@ -49,12 +153,17 @@ class YouTubeClient:
             message = str(e)
 
         if reason == "quotaExceeded":
+            pool_info = (
+                f" All {len(self.api_keys)} API keys in the rotation pool were exhausted."
+                if len(self.api_keys) > 1
+                else ""
+            )
             return {
                 "success": False,
-                "error": "YouTube Data API quota exceeded.",
+                "error": f"YouTube Data API quota exceeded.{pool_info}",
                 "reason": "quotaExceeded",
                 "status_code": status_code,
-                "suggestion": "The daily 10,000 unit quota for your YouTube Data API project has been reached. Quota resets at midnight Pacific Time.",
+                "suggestion": "The daily 10,000 unit quota for your YouTube Data API project(s) has been reached. Quota resets at midnight Pacific Time.",
             }
         elif reason == "accessNotConfigured":
             return {
@@ -109,8 +218,7 @@ class YouTubeClient:
                 if cached_res is not None:
                     return cached_res
 
-            request = self.service.search().list(**params)
-            response = request.execute()
+            response = self._execute_api_request(lambda: self.service.search().list(**params))
 
             if raw:
                 return response
@@ -200,11 +308,12 @@ class YouTubeClient:
         """Fetch full details for one or more video IDs."""
         try:
             ids_str = ",".join(video_ids[:50])
-            request = self.service.videos().list(
-                part="snippet,contentDetails,statistics",
-                id=ids_str,
+            response = self._execute_api_request(
+                lambda: self.service.videos().list(
+                    part="snippet,contentDetails,statistics",
+                    id=ids_str,
+                )
             )
-            response = request.execute()
 
             if raw:
                 return response
@@ -248,8 +357,7 @@ class YouTubeClient:
                     "error": "Must provide one of 'channel_id', 'for_handle', or 'for_username'.",
                 }
 
-            request = self.service.channels().list(**params)
-            response = request.execute()
+            response = self._execute_api_request(lambda: self.service.channels().list(**params))
 
             if raw:
                 return response
@@ -288,8 +396,7 @@ class YouTubeClient:
             if page_token:
                 params["pageToken"] = page_token
 
-            request = self.service.playlistItems().list(**params)
-            response = request.execute()
+            response = self._execute_api_request(lambda: self.service.playlistItems().list(**params))
 
             if raw:
                 return response
@@ -330,8 +437,7 @@ class YouTubeClient:
             if page_token:
                 params["pageToken"] = page_token
 
-            request = self.service.commentThreads().list(**params)
-            response = request.execute()
+            response = self._execute_api_request(lambda: self.service.commentThreads().list(**params))
 
             if raw:
                 return response
@@ -356,11 +462,12 @@ class YouTubeClient:
         if not channel_ids:
             return []
         ids_str = ",".join(channel_ids[:50])
-        request = self.service.channels().list(
-            part="snippet,contentDetails,statistics",
-            id=ids_str,
+        response = self._execute_api_request(
+            lambda: self.service.channels().list(
+                part="snippet,contentDetails,statistics",
+                id=ids_str,
+            )
         )
-        response = request.execute()
         return [format_channel_details(item) for item in response.get("items", [])]
 
     def scout_niche_channels(
@@ -404,7 +511,7 @@ class YouTubeClient:
                 if region_code:
                     search_params["regionCode"] = region_code
 
-                search_res = self.service.search().list(**search_params).execute()
+                search_res = self._execute_api_request(lambda: self.service.search().list(**search_params))
                 channel_ids = [
                     item["id"]["channelId"]
                     for item in search_res.get("items", [])
@@ -423,7 +530,7 @@ class YouTubeClient:
                     vid_params["regionCode"] = region_code
 
                 try:
-                    vid_res = self.service.search().list(**vid_params).execute()
+                    vid_res = self._execute_api_request(lambda: self.service.search().list(**vid_params))
                     for item in vid_res.get("items", []):
                         ch_id = item.get("snippet", {}).get("channelId")
                         if ch_id and ch_id not in channel_ids:
@@ -549,8 +656,7 @@ class YouTubeClient:
             if cat_id:
                 params["videoCategoryId"] = cat_id
 
-            request = self.service.videos().list(**params)
-            response = request.execute()
+            response = self._execute_api_request(lambda: self.service.videos().list(**params))
 
             if raw:
                 return response
@@ -3238,6 +3344,119 @@ Engineered from proven viral outlier topics that generated breakout views with l
                 "3. Use consistent thumbnail design templates across the entire playlist so viewers instantly recognize them as parts of a single unified series.",
             ],
         }
+
+    def get_channel_rss(self, channel_id: str, max_results: int = 15) -> Dict[str, Any]:
+        """Fetch the latest video uploads from a YouTube channel using the public Atom RSS feed.
+
+        Consumes 0 Google Cloud API quota units and requires NO API key.
+
+        Args:
+            channel_id: The YouTube Channel ID (e.g., 'UCuAXFkgsw1L7xaCfnd5JJOw') or channel URL.
+            max_results: Max number of recent videos to return (1 to 15, default: 15).
+
+        Returns:
+            Structured dictionary with channel metadata, videos, and zero-quota status.
+        """
+        clean_id = channel_id.strip()
+        if clean_id.startswith("http://") or clean_id.startswith("https://"):
+            feed_url = clean_id
+        elif clean_id.startswith("UC"):
+            feed_url = f"https://www.youtube.com/feeds/videos.xml?channel_id={clean_id}"
+        elif clean_id.startswith("@"):
+            feed_url = f"https://www.youtube.com/feeds/videos.xml?user={clean_id.lstrip('@')}"
+        else:
+            feed_url = f"https://www.youtube.com/feeds/videos.xml?channel_id={clean_id}"
+
+        try:
+            req = urllib.request.Request(
+                feed_url,
+                headers={"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"}
+            )
+            with urllib.request.urlopen(req, timeout=10) as resp:
+                xml_content = resp.read()
+
+            root = ET.fromstring(xml_content)
+
+            ns = {
+                "atom": "http://www.w3.org/2005/Atom",
+                "yt": "http://www.youtube.com/xml/schemas/2015",
+                "media": "http://search.yahoo.com/mrss/",
+            }
+
+            channel_title = root.findtext("atom:title", default="", namespaces=ns)
+            channel_url = ""
+            for link in root.findall("atom:link", namespaces=ns):
+                if link.attrib.get("rel") == "alternate":
+                    channel_url = link.attrib.get("href", "")
+                    break
+
+            ch_id_el = root.find("yt:channelId", namespaces=ns)
+            actual_channel_id = ch_id_el.text if ch_id_el is not None else clean_id
+
+            videos = []
+            entries = root.findall("atom:entry", namespaces=ns)
+            for entry in entries[:max_results]:
+                video_id_el = entry.find("yt:videoId", namespaces=ns)
+                video_id = video_id_el.text if video_id_el is not None else ""
+                title = entry.findtext("atom:title", default="", namespaces=ns)
+                published = entry.findtext("atom:published", default="", namespaces=ns)
+                updated = entry.findtext("atom:updated", default="", namespaces=ns)
+
+                link_el = entry.find("atom:link", namespaces=ns)
+                watch_url = (
+                    link_el.attrib.get("href", f"https://www.youtube.com/watch?v={video_id}")
+                    if link_el is not None
+                    else f"https://www.youtube.com/watch?v={video_id}"
+                )
+
+                media_group = entry.find("media:group", namespaces=ns)
+                description = ""
+                thumbnail_url = ""
+                views = 0
+                if media_group is not None:
+                    description = media_group.findtext("media:description", default="", namespaces=ns)
+                    thumb_el = media_group.find("media:thumbnail", namespaces=ns)
+                    if thumb_el is not None:
+                        thumbnail_url = thumb_el.attrib.get("url", "")
+                    comm_el = media_group.find("media:community", namespaces=ns)
+                    if comm_el is not None:
+                        stats_el = comm_el.find("media:statistics", namespaces=ns)
+                        if stats_el is not None:
+                            try:
+                                views = int(stats_el.attrib.get("views", 0))
+                            except (ValueError, TypeError):
+                                views = 0
+
+                videos.append({
+                    "video_id": video_id,
+                    "title": title,
+                    "published_at": published,
+                    "updated_at": updated,
+                    "url": watch_url,
+                    "description_snippet": description[:300] if description else "",
+                    "thumbnail_url": thumbnail_url,
+                    "views": views,
+                })
+
+            return {
+                "success": True,
+                "source": "youtube_atom_rss",
+                "quota_units_consumed": 0,
+                "channel_id": actual_channel_id,
+                "channel_title": channel_title,
+                "channel_url": channel_url,
+                "video_count": len(videos),
+                "videos": videos,
+            }
+
+        except Exception as e:
+            return {
+                "success": False,
+                "source": "youtube_atom_rss",
+                "error": f"Failed to fetch or parse RSS feed for channel '{clean_id}': {str(e)}",
+                "feed_url": feed_url,
+            }
+
 
 
 

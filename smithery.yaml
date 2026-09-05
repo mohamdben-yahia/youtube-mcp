@@ -1,0 +1,24 @@
+# Smithery MCP Server Configuration
+# Reference: https://smithery.ai/docs/config#smitheryyaml
+
+startCommand:
+  type: stdio
+  configSchema:
+    type: object
+    properties:
+      youtubeApiKey:
+        type: string
+        description: "Google Cloud YouTube Data API v3 key."
+      youtubeApiKeys:
+        type: string
+        description: "Optional comma-separated list of YouTube Data API v3 keys for automatic quota failover."
+  commandFunction:
+    |
+    (config) => ({
+      command: "uvx",
+      args: ["youtube-mcp"],
+      env: {
+        ...(config.youtubeApiKey ? { YOUTUBE_API_KEY: config.youtubeApiKey } : {}),
+        ...(config.youtubeApiKeys ? { YOUTUBE_API_KEYS: config.youtubeApiKeys } : {})
+      }
+    })

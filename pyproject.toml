@@ -1,7 +1,7 @@
 [project]
 name = "youtube-mcp"
-version = "1.0.0"
-description = "The most comprehensive YouTube MCP server for Claude, Cursor & AI agents — 30 tools for creator analytics, channel audits, viral video research, SEO metadata, transcript extraction, competitor intelligence, thumbnail generation, and monetization strategy."
+version = "1.1.0"
+description = "The most comprehensive YouTube MCP server for Claude, Cursor & AI agents — 33 tools, multi-key quota rotation, zero-quota RSS fallback, channel audits, viral video research, SEO metadata, transcript extraction, and monetization strategy."
 readme = "README.md"
 requires-python = ">=3.10"
 license = { text = "MIT" }
@@ -15,7 +15,7 @@ keywords = [
     "channel-analytics", "video-analytics", "competitor-analysis",
     "content-strategy", "viral-video", "thumbnail-generator",
     "audience-sentiment", "monetization", "sponsor-discovery",
-    "shorts", "trending", "niche-research",
+    "shorts", "trending", "niche-research", "quota-rotation",
 ]
 classifiers = [
     "Development Status :: 5 - Production/Stable",
@@ -33,15 +33,15 @@ classifiers = [
     "Topic :: Scientific/Engineering :: Artificial Intelligence",
 ]
 authors = [
-    { name = "YouTube MCP Contributors" }
+    { name = "Mohamed Benyahia", email = "benyahiamohamd@gmail.com" }
 ]
 
 [project.urls]
-Homepage = "https://github.com/yourusername/youtube-mcp"
-Documentation = "https://github.com/yourusername/youtube-mcp#readme"
-Repository = "https://github.com/yourusername/youtube-mcp"
-Issues = "https://github.com/yourusername/youtube-mcp/issues"
-Changelog = "https://github.com/yourusername/youtube-mcp/releases"
+Homepage = "https://github.com/mohamedbenyahia/youtube-mcp"
+Documentation = "https://github.com/mohamedbenyahia/youtube-mcp#readme"
+Repository = "https://github.com/mohamedbenyahia/youtube-mcp"
+Issues = "https://github.com/mohamedbenyahia/youtube-mcp/issues"
+Changelog = "https://github.com/mohamedbenyahia/youtube-mcp/releases"
 
 dependencies = [
     "mcp[cli]>=1.2.0",

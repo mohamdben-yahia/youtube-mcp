@@ -995,6 +995,146 @@ def test_design_binge_playlist():
     assert len(res["algorithmic_binge_rules"]) == 3
 
 
+def test_client_multi_key_initialization():
+    # Comma-separated single string
+    client = YouTubeClient(api_key="key_1, key_2, key_3")
+    assert client.key_count == 3
+    assert client.api_keys == ["key_1", "key_2", "key_3"]
+    assert client.active_key_index == 0
+    assert client.api_key == "key_1"
+
+    # List of keys
+    client2 = YouTubeClient(api_keys=["k_a", "k_b", "k_c"])
+    assert client2.key_count == 3
+    assert client2.api_key == "k_a"
+
+    # Rotate key
+    next_key = client2.rotate_key()
+    assert next_key == "k_b"
+    assert client2.active_key_index == 1
+
+    next_key = client2.rotate_key()
+    assert next_key == "k_c"
+    assert client2.active_key_index == 2
+
+    # Wraps around
+    next_key = client2.rotate_key()
+    assert next_key == "k_a"
+    assert client2.active_key_index == 0
+
+
+def test_client_automatic_quota_rotation(mock_search_response):
+    from youtube_mcp.cache import ResponseCache
+    client = YouTubeClient(api_keys=["exhausted_key", "working_key"], cache=ResponseCache(enabled=False))
+
+    # Mock service 1: fails with 403 quotaExceeded
+    resp_403 = Response({"status": 403})
+    error_payload = {
+        "error": {
+            "errors": [{"reason": "quotaExceeded"}],
+            "message": "Quota exceeded",
+            "code": 403,
+        }
+    }
+    quota_error = HttpError(resp_403, json.dumps(error_payload).encode("utf-8"))
+
+    mock_service_1 = MagicMock()
+    mock_req_1 = MagicMock()
+    mock_req_1.execute.side_effect = quota_error
+    mock_service_1.search().list.return_value = mock_req_1
+
+    # Mock service 2: succeeds
+    mock_service_2 = MagicMock()
+    mock_req_2 = MagicMock()
+    mock_req_2.execute.return_value = mock_search_response
+    mock_service_2.search().list.return_value = mock_req_2
+
+    services = [mock_service_1, mock_service_2]
+
+    with patch("youtube_mcp.client.build", side_effect=services):
+        result = client.search("test query")
+
+    assert result["success"] is True
+    assert client.active_key_index == 1
+    assert client.api_key == "working_key"
+
+
+def test_client_all_keys_exhausted_returns_error():
+    from youtube_mcp.cache import ResponseCache
+    client = YouTubeClient(api_keys=["key_fail_1", "key_fail_2"], cache=ResponseCache(enabled=False))
+
+    resp_403 = Response({"status": 403})
+    error_payload = {
+        "error": {
+            "errors": [{"reason": "quotaExceeded"}],
+            "message": "Quota exceeded",
+            "code": 403,
+        }
+    }
+    quota_error = HttpError(resp_403, json.dumps(error_payload).encode("utf-8"))
+
+    mock_service = MagicMock()
+    mock_req = MagicMock()
+    mock_req.execute.side_effect = quota_error
+    mock_service.search().list.return_value = mock_req
+
+    with patch("youtube_mcp.client.build", return_value=mock_service):
+        result = client.search("exhausted_unique_query_12345")
+
+    assert result["success"] is False
+    assert result["reason"] == "quotaExceeded"
+    assert "All 2 API keys in the rotation pool were exhausted." in result["error"]
+
+
+def test_client_get_channel_rss_mocked():
+    sample_xml = b"""<?xml version="1.0" encoding="UTF-8"?>
+<feed xmlns:yt="http://www.youtube.com/xml/schemas/2015" xmlns:media="http://search.yahoo.com/mrss/" xmlns="http://www.w3.org/2005/Atom">
+ <link rel="self" href="http://www.youtube.com/feeds/videos.xml?channel_id=UC123"/>
+ <id>yt:channel:UC123</id>
+ <yt:channelId>UC123</yt:channelId>
+ <title>Sample Channel</title>
+ <link rel="alternate" href="https://www.youtube.com/channel/UC123"/>
+ <entry>
+  <id>yt:video:vid_999</id>
+  <yt:videoId>vid_999</yt:videoId>
+  <yt:channelId>UC123</yt:channelId>
+  <title>Recent Upload Title</title>
+  <link rel="alternate" href="https://www.youtube.com/watch?v=vid_999"/>
+  <published>2026-01-01T00:00:00+00:00</published>
+  <updated>2026-01-01T00:00:00+00:00</updated>
+  <media:group>
+   <media:title>Recent Upload Title</media:title>
+   <media:description>This is a test description snippet</media:description>
+   <media:thumbnail url="https://i.ytimg.com/vi/vid_999/hqdefault.jpg" width="480" height="360"/>
+   <media:community>
+    <media:statistics views="98765"/>
+   </media:community>
+  </media:group>
+ </entry>
+</feed>"""
+
+    client = YouTubeClient(api_key="dummy_key")
+
+    mock_resp = MagicMock()
+    mock_resp.read.return_value = sample_xml
+    mock_resp.__enter__.return_value = mock_resp
+    mock_resp.__exit__.return_value = None
+
+    with patch("urllib.request.urlopen", return_value=mock_resp):
+        res = client.get_channel_rss("UC123", max_results=5)
+
+    assert res["success"] is True
+    assert res["source"] == "youtube_atom_rss"
+    assert res["quota_units_consumed"] == 0
+    assert res["channel_id"] == "UC123"
+    assert res["channel_title"] == "Sample Channel"
+    assert res["video_count"] == 1
+    assert res["videos"][0]["video_id"] == "vid_999"
+    assert res["videos"][0]["title"] == "Recent Upload Title"
+    assert res["videos"][0]["views"] == 98765
+
+
+
 
 
 

@@ -4,12 +4,12 @@
 
 ### The Most Powerful YouTube API Server for AI Agents
 
-**30 tools · 3 dynamic resources · 3 prompts · 91 tests · 100% live YouTube Data API**
+**33 tools · 3 dynamic resources · 3 prompts · 91+ tests · 100% live YouTube Data API**
 
 [![Python 3.10+](https://img.shields.io/badge/Python-3.10%2B-3776AB?style=for-the-badge&logo=python&logoColor=white)](https://python.org)
 [![MCP Protocol](https://img.shields.io/badge/MCP-Model_Context_Protocol-blueviolet?style=for-the-badge)](https://modelcontextprotocol.io)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green?style=for-the-badge)](LICENSE)
-[![Tests](https://img.shields.io/badge/Tests-91_Passed-success?style=for-the-badge)](tests/)
+[![Tests](https://img.shields.io/badge/Tests-91%2B_Passed-success?style=for-the-badge)](tests/)
 [![Claude Desktop](https://img.shields.io/badge/Claude-Desktop-orange?style=for-the-badge)](https://claude.ai)
 [![Cursor](https://img.shields.io/badge/Cursor-IDE-blue?style=for-the-badge)](https://cursor.com)
 
@@ -28,7 +28,9 @@
 | Feature | YouTube MCP Server | Other YouTube Tools |
 | :--- | :---: | :---: |
 | **MCP-native** (Claude, Cursor, Windsurf, LLM agents) | ✅ | ❌ |
-| **30 specialized creator & research tools** | ✅ | 3–5 basic tools |
+| **33 specialized creator & research tools** | ✅ | 3–5 basic tools |
+| **Multi-key quota rotation pool** (`YOUTUBE_API_KEYS`) | ✅ | ❌ (Hard 403 crashes) |
+| **Zero-quota public RSS video feed** | ✅ | ❌ |
 | **Live YouTube Data API** (real tags, real thumbnails, real comments) | ✅ | Static/mock data |
 | **Transcript extraction without API key** | ✅ | Requires OAuth |
 | **Competitor reverse engineering** | ✅ | ❌ |
@@ -42,7 +44,7 @@
 | **11 Antigravity workflow skills** (full auto-pipeline) | ✅ | ❌ |
 | **Disk-based quota caching** | ✅ | ❌ |
 | **Docker & SSE remote hosting** | ✅ | ❌ |
-| **91 automated tests** | ✅ | Untested |
+| **91+ automated tests** | ✅ | Untested |
 
 ---
 
@@ -54,12 +56,12 @@
 - [📦 Prerequisites](#prerequisites)
 - [🚀 Quickstart](#quickstart)
 - [⚙️ MCP Client Configuration](#mcp-client-configuration) — Claude Desktop, Cursor, Windsurf, Antigravity
-- [📖 Available Tools & Schema](#available-tools--schema) — Full parameter documentation for all 30 tools
+- [📖 Available Tools & Schema](#available-tools--schema) — Full parameter documentation for all 33 tools
 - [🌐 Dynamic MCP Resources](#-dynamic-mcp-resources-youtube-uris)
 - [🧠 Built-in Prompts](#-built-in-prompts)
 - [🐳 Docker & Remote Hosting](#-docker--remote-hosting-server-sent-events)
 - [🧪 Running Tests](#-running-tests)
-- [📦 Complete Tool Index](#-complete-tool-index-30-mcp-tools)
+- [📦 Complete Tool Index](#-complete-tool-index-33-mcp-tools)
 - [🔌 Compatibility](#-compatibility)
 - [🤖 Antigravity Plugin: 11 Skills](#-antigravity-plugin-11-workflow-skills)
 - [🏗️ Tech Stack](#️-tech-stack)
@@ -133,7 +135,9 @@ Starting a YouTube channel without research leads to months of making videos nob
 - **🌲 Evergreen Search vs Viral Browse Classifier (`classify_traffic_potential`)**: Classifies topics into 3+ year passive search assets vs 14-day viral home feed spikes, estimating RPM and keyword packaging.
 - **💎 Day-One Monetization Offer Architect (`generate_monetization_offers`)**: Designs 3 high-converting digital product tiers (Lead Magnet, $29 Template, High-Ticket Service) to monetize with under 1,000 subscribers without AdSense.
 - **🔗 Binge-Watching Series & Playlist Architect (`design_binge_playlist`)**: Structures a 4-6 video serialized loop with cliffhanger end-screen bridging scripts to multiply Session Watch Time.
-- **⚡ Intelligent Daily Quota Caching**: Built-in disk-based caching (`ResponseCache`) with configurable TTL and directory (`YOUTUBE_CACHE_ENABLED`, `YOUTUBE_CACHE_DIR`, `YOUTUBE_CACHE_TTL`) to preserve your 10,000 unit/day Google API quota.
+- **⚡ Multi-Key API Quota Rotator (`YOUTUBE_API_KEYS`)**: Load multiple Google Cloud API keys (`key1,key2,key3`). When any key hits a 403 `quotaExceeded` limit, the server automatically rotates to the next key without failing the user's request.
+- **📡 Zero-Quota Public RSS Video Feed (`get_channel_rss_videos`)**: Fetches recent channel uploads with **0 API quota units** and **requires NO API key**, using YouTube's public XML Atom feeds.
+- **💾 Persistent Quota Caching**: Built-in disk-based caching (`ResponseCache`) with configurable TTL and directory (`YOUTUBE_CACHE_ENABLED`, `YOUTUBE_CACHE_DIR`, `YOUTUBE_CACHE_TTL`) to preserve your 10,000 unit/day Google API quota.
 
 ### 🌐 Dynamic MCP Resources (`youtube://` URIs)
 Exposes live context documents directly to LLMs:
@@ -144,6 +148,7 @@ Exposes live context documents directly to LLMs:
 ### 🛠️ Core Data & Transcript Tools
 - **📹 Video Details (`get_video_details`)**: Clean metadata (views, likes, human-formatted duration, channel info, tags).
 - **📝 Transcripts (`get_video_transcript`)**: Fetch full video subtitles **without requiring an API key or OAuth** in `text`, `timestamped`, or `json` formats.
+- **📡 Zero-Quota Recent Uploads (`get_channel_rss_videos`)**: Fetch latest uploads via public RSS feed with **zero quota consumption**.
 - **👤 Channel Insights (`get_channel_details`)**: Look up subscriber counts, view statistics, and upload playlists by Channel ID, `@handle`, or username.
 - **📂 Playlists (`get_playlist_items`)**: Browse items and videos within any public playlist.
 - **💬 Comments (`get_video_comments`)**: Fetch top-level comments and community discussions.
@@ -159,28 +164,42 @@ Exposes live context documents directly to LLMs:
 
 - **Python**: 3.10 or higher
 - **Package Manager**: [uv](https://docs.astral.sh/uv/) (recommended) or `pip`
-- **YouTube API Key (Optional for transcripts, required for Data API calls)**:
+- **YouTube API Key (Optional for transcripts & RSS, required for Data API calls)**:
   1. Go to [Google Cloud Console](https://console.cloud.google.com/).
   2. Create a project and enable **YouTube Data API v3**.
-  3. Create an API Key under **APIs & Services > Credentials**.
+  3. Create an API Key under **APIs & Services > Credentials** (or multiple keys for rotation).
 
 ---
 
 ## Quickstart
 
-### 1. Run with `uvx` (Instant Execution)
+### 1. 1-Click Install via Smithery (Easiest)
+
+To automatically install and configure YouTube MCP Server for Claude Desktop via [Smithery](https://smithery.ai):
+
+```bash
+npx -y @smithery/cli install @mohamedbenyahia/youtube-mcp --client claude
+```
+
+### 2. Run with `uvx` (Instant Execution)
 
 You can run the server directly without manual installation using `uvx`:
 
 ```bash
+# Single API Key
 export YOUTUBE_API_KEY="your_api_key_here"
+
+# Or Multi-Key Pool (automatic quota failover)
+export YOUTUBE_API_KEYS="key_1,key_2,key_3"
+
 uvx --from . youtube-mcp
 ```
 
-### 2. Local Installation & Development
+### 3. Local Installation & Development
 
 ```bash
 # Clone and enter directory
+git clone https://github.com/mohamedbenyahia/youtube-mcp.git
 cd youtube-mcp
 
 # Create virtual environment and install dependencies
@@ -190,7 +209,7 @@ uv pip install -e ".[dev]"
 
 # Copy environment template and configure key
 cp .env.example .env
-# Edit .env and set your YOUTUBE_API_KEY
+# Edit .env and set your YOUTUBE_API_KEY or YOUTUBE_API_KEYS
 ```
 
 Run locally:
@@ -742,6 +761,16 @@ Architects a 4-to-6 video interconnected binge-watching series with end-screen c
 
 ---
 
+### `get_channel_rss_videos` (Zero-Quota Recent Uploads)
+Fetches the latest video uploads from a YouTube channel using the public Atom RSS feed. **Consumes 0 Google Cloud API quota units and requires NO API key.**
+
+| Parameter | Type | Default | Description |
+| :--- | :--- | :--- | :--- |
+| `channel_id` | `string` | *required* | Channel ID (`UC...`) or full channel URL. |
+| `max_results` | `integer` | `15` | Maximum recent videos to return (1 to 15). |
+
+---
+
 ## 🌐 Dynamic MCP Resources (`youtube://` URIs)
 
 MCP clients can read dynamic live context resources directly:
@@ -809,7 +838,7 @@ All 91 tests mock Google API and transcript network requests to prevent burning 
 
 ---
 
-## 📦 Complete Tool Index (30 MCP Tools)
+## 📦 Complete Tool Index (33 MCP Tools)
 
 <details>
 <summary><strong>Click to expand the full tool reference table</strong></summary>
@@ -823,29 +852,32 @@ All 91 tests mock Google API and transcript network requests to prevent burning 
 | 5 | `get_playlist_items` | Data | Browse videos within any public playlist |
 | 6 | `get_video_comments` | Data | Fetch top-level comments and discussions |
 | 7 | `get_video_transcript` | Transcript | Extract subtitles without API key (text, timestamped, JSON) |
-| 8 | `scout_niche_channels` | Discovery | Multi-niche creator scouting campaigns |
-| 9 | `get_trending_niches` | Discovery | Real-time YouTube trending chart analysis |
-| 10 | `find_breakout_growth_channels` | Discovery | Identify newly created high-velocity channels |
-| 11 | `find_content_gaps` | Research | Find low-competition keywords with outdated ranking videos |
-| 12 | `find_viral_outliers` | Research | Detect 2.5x–10x breakout videos on any channel |
-| 13 | `audit_channel_strategy` | Audit | Reverse-engineer upload cadence, title formulas, monetization |
-| 14 | `reverse_engineer_channel` | Audit | Complete deep channel reverse engineering |
-| 15 | `compare_channels` | Audit | Head-to-head benchmarking of 2–5 rival channels |
-| 16 | `analyze_audience_sentiment` | Audience | Mine comments for pain points, questions, and requests |
-| 17 | `analyze_shorts_to_longform_ratio` | Audit | Diagnose Shorts-to-longform view cannibalization |
-| 18 | `classify_traffic_potential` | Strategy | Classify Evergreen Search vs Browse traffic potential |
-| 19 | `simulate_title_ctr` | Packaging | Grade titles against psychological click triggers |
-| 20 | `generate_thumbnail_concepts` | Packaging | 3 visual concepts with Midjourney/DALL-E prompts |
-| 21 | `generate_seo_metadata_pack` | SEO | Complete upload pack: titles, tags, chapters, description |
-| 22 | `generate_retention_script_outline` | Scripting | 7-beat retention script modeled on competitor hooks |
-| 23 | `predict_retention_dropoffs` | Scripting | WPM pacing analysis with pattern interrupt injection |
-| 24 | `analyze_optimal_upload_time` | Scheduling | Competitor publishing heatmap and Sweet Spot windows |
-| 25 | `analyze_community_posts` | Engagement | Viral polls, quizzes, and discussion strategies |
-| 26 | `extract_shorts_clips` | Repurposing | Auto-generate chapters and viral 30–60s Shorts clips |
-| 27 | `discover_niche_sponsors` | Monetization | Identify active paying brand sponsors in any niche |
-| 28 | `generate_monetization_offers` | Monetization | 3-tier funnel for sub-1k subscriber creators |
-| 29 | `design_binge_playlist` | Architecture | 4–6 video serialized loop with cliffhanger bridges |
-| 30 | `blueprint_new_channel` | Launch | All-in-one market research & 5-video launch roadmap |
+| 8 | `get_channel_rss_videos` | Data / Free | Zero-quota recent video uploads via public Atom RSS feed |
+| 9 | `scout_niche_channels` | Discovery | Multi-niche creator scouting campaigns |
+| 10 | `get_trending_niches` | Discovery | Real-time YouTube trending chart analysis |
+| 11 | `find_breakout_growth_channels` | Discovery | Identify newly created high-velocity channels |
+| 12 | `find_content_gaps` | Research | Find low-competition keywords with outdated ranking videos |
+| 13 | `find_viral_outliers` | Research | Detect 2.5x–10x breakout videos on any channel |
+| 14 | `audit_channel_strategy` | Audit | Reverse-engineer upload cadence, title formulas, monetization |
+| 15 | `reverse_engineer_channel` | Audit | Complete deep channel reverse engineering |
+| 16 | `compare_channels` | Audit | Head-to-head benchmarking of 2–5 rival channels |
+| 17 | `analyze_audience_sentiment` | Audience | Mine comments for pain points, questions, and requests |
+| 18 | `analyze_shorts_to_longform_ratio` | Audit | Diagnose Shorts-to-longform view cannibalization |
+| 19 | `classify_traffic_potential` | Strategy | Classify Evergreen Search vs Browse traffic potential |
+| 20 | `simulate_title_ctr` | Packaging | Grade titles against psychological click triggers |
+| 21 | `generate_thumbnail_concepts` | Packaging | 3 visual concepts with Midjourney/DALL-E prompts |
+| 22 | `generate_seo_metadata_pack` | SEO | Complete upload pack: titles, tags, chapters, description |
+| 23 | `generate_retention_script_outline` | Scripting | 7-beat retention script modeled on competitor hooks |
+| 24 | `predict_retention_dropoffs` | Scripting | WPM pacing analysis with pattern interrupt injection |
+| 25 | `analyze_optimal_upload_time` | Scheduling | Competitor publishing heatmap and Sweet Spot windows |
+| 26 | `analyze_community_posts` | Engagement | Viral polls, quizzes, and discussion strategies |
+| 27 | `extract_shorts_clips` | Repurposing | Auto-generate chapters and viral 30–60s Shorts clips |
+| 28 | `discover_niche_sponsors` | Monetization | Identify active paying brand sponsors in any niche |
+| 29 | `generate_monetization_offers` | Monetization | 3-tier funnel for sub-1k subscriber creators |
+| 30 | `design_binge_playlist` | Architecture | 4–6 video serialized loop with cliffhanger bridges |
+| 31 | `find_cross_language_opportunities` | Expansion | Detect English hits with zero competition abroad |
+| 32 | `export_research_report` | Reporting | Export formatted markdown dossier for Notion / clients |
+| 33 | `blueprint_new_channel` | Launch | All-in-one market research & 5-video launch roadmap |
 
 </details>
 
