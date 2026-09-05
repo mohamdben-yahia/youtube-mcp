@@ -157,7 +157,7 @@ Starting a YouTube channel without research leads to months of making videos nob
 - **🏷️ Complete Upload SEO Pack (`generate_seo_metadata_pack`)**: Generates 3 mobile-optimized titles (<50 chars), timestamped chapter description, top 15 ranked tags, and engagement pinned comment.
 - **💰 Niche Sponsor Radar (`discover_niche_sponsors`)**: Scans top videos in any niche to identify active paying brand sponsors, promo codes, tracking links, and sponsorship frequency.
 - **📊 Channel Strategy & Playbook Auditor (`audit_channel_strategy`)**: Fast audit of a creator's publishing cadence, title formulas, and monetization funnel.
-- **⚔️ Competitor Benchmarking (`compare_channels`)**: Perform head-to-head performance comparisons across 2 to 5 rival channels.
+- **⚔️ Competitor Benchmarking (`compare_channels`)**: Perform head-to-head performance comparisons across 2 to 10 rival channels.
 - **💬 Audience Sentiment & Pain-Point Mining (`analyze_audience_sentiment`)**: Mine comments for unanswered questions, viewer content requests, and recurring audience problems.
 - **✂️ Video Chapters & Viral Shorts Extractor (`extract_shorts_clips`)**: Generate timestamped chapters and extract top 30-60s punchy Shorts clips from transcripts.
 - **🗺️ Channel Launch Blueprint (`blueprint_new_channel`)**: All-in-one market research and 5-video launch roadmap for beginners.
@@ -541,11 +541,11 @@ Mine comments on any video to discover audience pain points, objections, unanswe
 ---
 
 ### `compare_channels` (Competitor Benchmarking)
-Perform head-to-head benchmarking between 2 to 5 competing YouTube channels.
+Perform head-to-head benchmarking between 2 to 10 competing YouTube channels.
 
 | Parameter | Type | Default | Description |
 | :--- | :--- | :--- | :--- |
-| `channel_handles` | `list[string]` | *required* | List of 2 to 5 channel handles (e.g. `["@mkbhd", "@Dave2D"]`) or IDs. |
+| `channel_handles` | `list[string]` | *required* | List of 2 to 10 channel handles (e.g. `["@channel1", "@channel2"]`) or IDs. |
 
 ---
 
@@ -896,7 +896,7 @@ All 91 tests mock Google API and transcript network requests to prevent burning 
 | 13 | `find_viral_outliers` | Research | Detect 2.5x–10x breakout videos on any channel |
 | 14 | `audit_channel_strategy` | Audit | Reverse-engineer upload cadence, title formulas, monetization |
 | 15 | `reverse_engineer_channel` | Audit | Complete deep channel reverse engineering |
-| 16 | `compare_channels` | Audit | Head-to-head benchmarking of 2–5 rival channels |
+| 16 | `compare_channels` | Audit | Head-to-head benchmarking of 2–10 rival channels |
 | 17 | `analyze_audience_sentiment` | Audience | Mine comments for pain points, questions, and requests |
 | 18 | `analyze_shorts_to_longform_ratio` | Audit | Diagnose Shorts-to-longform view cannibalization |
 | 19 | `classify_traffic_potential` | Strategy | Classify Evergreen Search vs Browse traffic potential |

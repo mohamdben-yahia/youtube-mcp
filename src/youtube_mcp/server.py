@@ -372,13 +372,13 @@ def analyze_audience_sentiment(
 def compare_channels(
     channel_handles: List[str],
 ) -> Dict[str, Any]:
-    """Perform a head-to-head benchmarking comparison between 2 to 5 competing YouTube channels.
+    """Perform a head-to-head benchmarking comparison between 2 to 10 competing YouTube channels.
 
     Compares subscriber growth velocity, recent average views, upload cadence,
     views-to-subscriber efficiency, and highlights category winners.
 
     Args:
-        channel_handles: List of 2 to 5 channel handles (e.g. ['@mkbhd', '@dave2d']) or Channel IDs.
+        channel_handles: List of 2 to 10 channel handles (e.g. ['@channel1', '@channel2']) or Channel IDs.
     """
     client = get_client()
     return client.compare_channels(

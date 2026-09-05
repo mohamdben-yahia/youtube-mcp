@@ -1306,7 +1306,7 @@ class YouTubeClient:
             from datetime import datetime
 
             channels_data = []
-            for handle in channel_handles[:5]:  # limit to 5 channels
+            for handle in channel_handles[:10]:  # support up to 10 channels
                 target = handle.strip()
                 if target.startswith("@") or not target.startswith("UC"):
                     ch_res = self.get_channel_details(for_handle=target)
