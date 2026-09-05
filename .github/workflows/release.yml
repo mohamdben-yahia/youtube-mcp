@@ -32,6 +32,7 @@ jobs:
 
       - name: Install dependencies & test
         run: |
+          uv venv --python 3.12
           uv pip install -e ".[dev]"
           uv run pytest -v
 
