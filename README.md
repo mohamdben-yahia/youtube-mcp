@@ -4,12 +4,12 @@
 
 ### The Most Powerful YouTube API Server for AI Agents
 
-**33 tools · 3 dynamic resources · 3 prompts · 91+ tests · 100% live YouTube Data API**
+**33 tools · 3 dynamic resources · 3 prompts · 101+ tests · 100% live YouTube Data API**
 
 [![Python 3.10+](https://img.shields.io/badge/Python-3.10%2B-3776AB?style=for-the-badge&logo=python&logoColor=white)](https://python.org)
 [![MCP Protocol](https://img.shields.io/badge/MCP-Model_Context_Protocol-blueviolet?style=for-the-badge)](https://modelcontextprotocol.io)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green?style=for-the-badge)](LICENSE)
-[![Tests](https://img.shields.io/badge/Tests-91%2B_Passed-success?style=for-the-badge)](tests/)
+[![Tests](https://img.shields.io/badge/Tests-101%2B_Passed-success?style=for-the-badge)](tests/)
 [![Claude Desktop](https://img.shields.io/badge/Claude-Desktop-orange?style=for-the-badge)](https://claude.ai)
 [![Cursor](https://img.shields.io/badge/Cursor-IDE-blue?style=for-the-badge)](https://cursor.com)
 
@@ -834,25 +834,38 @@ MCP clients supporting prompts (such as Claude Desktop and Cursor) can trigger a
 
 ## 🐳 Docker & Remote Hosting (Server-Sent Events)
 
-Deploy this server remotely on **Railway**, **Fly.io**, **Render**, or your own server with Docker:
+Deploy this server remotely on **Railway**, **Fly.io**, **Render**, **DigitalOcean**, or your own server with Docker.
+
+### 🔒 Hosted Security & Authentication (`MCP_AUTH_KEY`)
+When hosting over SSE or HTTP on a remote network or public IP, the server **automatically enforces token authentication** to protect your YouTube API quota from unauthorized access:
+
+* **Configured Key**: Set `MCP_AUTH_KEY=your_secret_token` in your `.env` or Docker environment.
+* **Auto-Generated Key**: If `MCP_AUTH_KEY` is not set or set to `auto`, the server generates a cryptographically secure 256-bit token (`sec_...`) at startup and displays it in the logs.
+* **Health Check Bypass**: Public `/health` and `/healthz` endpoints return `200 OK` without credentials, allowing Docker and load balancer health checks to pass cleanly.
 
 ```bash
-# Build and run with Docker Compose
+# Build and run with Docker Compose (auto-secures with MCP_AUTH_KEY)
 docker compose up -d
 
 # Or run directly with Docker
 docker build -t youtube-mcp .
-docker run -d -p 8000:8000 -e YOUTUBE_API_KEY="your_api_key" youtube-mcp
+docker run -d -p 8000:8000 \
+  -e YOUTUBE_API_KEY="your_youtube_api_key" \
+  -e MCP_AUTH_KEY="your_secret_auth_key" \
+  youtube-mcp
 ```
 
 ### Remote MCP Client Configuration
-Connect your Claude Desktop or Cursor to your remote instance over SSE:
+Connect your Claude Desktop, Cursor, or remote agents to your secured instance:
 
 ```json
 {
   "mcpServers": {
     "youtube-remote": {
-      "url": "http://your-server-ip:8000/sse"
+      "url": "http://your-server-ip:8000/sse?api_key=your_secret_auth_key",
+      "headers": {
+        "Authorization": "Bearer your_secret_auth_key"
+      }
     }
   }
 }
@@ -870,7 +883,7 @@ pytest -v
 pytest -v --tb=short
 ```
 
-All 91 tests mock Google API and transcript network requests to prevent burning quota during CI/CD.
+All 101 tests mock Google API, RSS, and transcript network requests to prevent burning quota during CI/CD.
 
 ---
 

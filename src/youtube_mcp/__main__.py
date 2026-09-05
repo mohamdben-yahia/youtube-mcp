@@ -3,8 +3,10 @@
 import argparse
 import os
 import sys
+import uvicorn
 from dotenv import load_dotenv
 from youtube_mcp.server import mcp
+from youtube_mcp.auth import get_or_generate_auth_key, build_secured_starlette_app
 
 
 def main():
@@ -32,25 +34,58 @@ def main():
         default=8000,
         help="Port to bind for SSE or HTTP transport (default: 8000)",
     )
+    parser.add_argument(
+        "--auth-key",
+        default=None,
+        help="Authentication key for hosted SSE/HTTP endpoints (or set MCP_AUTH_KEY env var)",
+    )
+    parser.add_argument(
+        "--generate-key",
+        action="store_true",
+        help="Force generation of a new cryptographically secure authentication key",
+    )
+    parser.add_argument(
+        "--no-auth",
+        action="store_true",
+        help="Disable authentication on hosted SSE/HTTP endpoints (insecure; for local testing only)",
+    )
 
     args = parser.parse_args()
 
-    api_key = os.getenv("YOUTUBE_API_KEY")
+    api_key = os.getenv("YOUTUBE_API_KEY") or os.getenv("YOUTUBE_API_KEYS")
     if not api_key:
         sys.stderr.write(
-            "[WARNING] YOUTUBE_API_KEY environment variable is not set.\n"
-            "Video transcripts (get_video_transcript) will work without an API key,\n"
-            "but search, video details, channels, playlists, and comments will require\n"
-            "a valid YouTube Data API v3 key.\n\n"
+            "[WARNING] Neither YOUTUBE_API_KEY nor YOUTUBE_API_KEYS is set.\n"
+            "Public RSS feeds (get_channel_rss_videos) and video transcripts (get_video_transcript)\n"
+            "will function with zero quota, but official Data API operations will require an API key.\n\n"
         )
         sys.stderr.flush()
 
     if args.transport == "stdio":
         mcp.run(transport="stdio")
-    elif args.transport == "sse":
-        mcp.run(transport="sse", host=args.host, port=args.port)
-    elif args.transport == "streamable-http":
-        mcp.run(transport="streamable-http", host=args.host, port=args.port)
+    elif args.transport in ("sse", "streamable-http"):
+        # Resolve authentication key
+        auth_key = None
+        if not args.no_auth:
+            allow_gen = args.generate_key or (args.auth_key is None and not os.getenv("MCP_AUTH_KEY") and not os.getenv("YOUTUBE_MCP_AUTH_KEY"))
+            auth_key = get_or_generate_auth_key(
+                explicit_key=args.auth_key,
+                allow_generation=allow_gen,
+            )
+
+        app = build_secured_starlette_app(
+            mcp_server=mcp,
+            auth_key=auth_key,
+            transport=args.transport,
+            host=args.host,
+        )
+
+        uvicorn.run(
+            app,
+            host=args.host,
+            port=args.port,
+            log_level="info",
+        )
 
 
 if __name__ == "__main__":
