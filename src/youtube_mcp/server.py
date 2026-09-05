@@ -648,6 +648,97 @@ def find_cross_language_opportunities(
     )
 
 
+@mcp.tool()
+def simulate_title_ctr(
+    titles: List[str],
+    target_niche: Optional[str] = None,
+) -> Dict[str, Any]:
+    """Grade and simulate the click-through-rate (CTR) potential of candidate video titles.
+
+    Evaluates titles against YouTube psychological click triggers: curiosity gaps, loss aversion,
+    specificity/numbers, power words, and mobile length sweet-spots (<50 chars). Designates
+    the highest-CTR winning title and provides 3 optimized variations for each candidate.
+
+    Args:
+        titles: List of 1 to 8 candidate video titles to test against each other.
+        target_niche: Optional niche context (e.g. 'coding', 'finance', 'gaming').
+    """
+    client = get_client()
+    return client.simulate_title_ctr(
+        titles=titles,
+        target_niche=target_niche,
+    )
+
+
+@mcp.tool()
+def analyze_optimal_upload_time(
+    niche_or_channel: str,
+    sample_size: int = 25,
+    timezone_offset_hours: int = 0,
+) -> Dict[str, Any]:
+    """Analyze competitor publishing schedules to find the optimal day and hour to upload.
+
+    Inspects publishing timestamps of top videos in a niche or channel, builds
+    a day-of-week and hour-of-day distribution, and identifies low-competition "Sweet Spot" windows.
+
+    Args:
+        niche_or_channel: Niche topic keyword (e.g. 'coding tutorials', 'finance') or creator handle.
+        sample_size: Number of recent competitor uploads to sample (10 to 50, default 25).
+        timezone_offset_hours: Timezone offset from UTC in hours (e.g. -5 for EST, +1 for CET, default 0).
+    """
+    client = get_client()
+    return client.analyze_optimal_upload_time(
+        niche_or_channel=niche_or_channel,
+        sample_size=sample_size,
+        timezone_offset_hours=timezone_offset_hours,
+    )
+
+
+@mcp.tool()
+def predict_retention_dropoffs(
+    script_or_transcript: Optional[str] = None,
+    video_id_or_url: Optional[str] = None,
+    target_duration_minutes: Optional[int] = None,
+) -> Dict[str, Any]:
+    """Analyze video script or transcript pacing to predict viewer drop-off points and suggest pattern interrupts.
+
+    Calculates words-per-minute (WPM) across segments, flags flat/monotonous monologue stretches
+    (>45 seconds without visual change or question), and injects timestamped retention resets.
+
+    Args:
+        script_or_transcript: Raw text of the draft video script or spoken transcript.
+        video_id_or_url: Optional YouTube Video ID or URL to fetch and evaluate live transcript.
+        target_duration_minutes: Optional target video runtime in minutes.
+    """
+    client = get_client()
+    return client.predict_retention_dropoffs(
+        script_or_transcript=script_or_transcript,
+        video_id_or_url=video_id_or_url,
+        target_duration_minutes=target_duration_minutes,
+    )
+
+
+@mcp.tool()
+def analyze_community_posts(
+    niche_or_channel: str,
+    target_goal: str = "growth",
+) -> Dict[str, Any]:
+    """Generate high-engagement Community Tab polls, quizzes, and discussion posts.
+
+    Leverages YouTube's Community Tab algorithm, which distributes polls into the home feeds
+    of non-subscribers, creating viral discovery for new channels between video releases.
+
+    Args:
+        niche_or_channel: Topic, niche, or creator handle (e.g. 'python programming', 'personal finance').
+        target_goal: Goal for the community strategy ('growth', 'video_validation', 'audience_loyalty').
+    """
+    client = get_client()
+    return client.analyze_community_posts(
+        niche_or_channel=niche_or_channel,
+        target_goal=target_goal,
+    )
+
+
 # --- Dynamic MCP Resources (youtube:// URIs) ---
 
 @mcp.resource("youtube://trending/{category}")

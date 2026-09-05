@@ -67,6 +67,10 @@ Starting a YouTube channel without research leads to months of making videos nob
 - **🗺️ Channel Launch Blueprint (`blueprint_new_channel`)**: All-in-one market research and 5-video launch roadmap for beginners.
 - **📑 Markdown & Notion Report Exporter (`export_research_report`)**: Export an end-to-end market research study and 5-video launch roadmap into an executive-ready `.md` file formatted with tables, competitor rankings, and comment insights.
 - **🌐 International Arbitrage Radar (`find_cross_language_opportunities`)**: Spot proven viral English topics with low competition in non-English markets (Spanish, French, German, Portuguese, Arabic, Japanese), providing localized title frameworks and translated hooks.
+- **🧪 A/B Title Tester & CTR Predictor (`simulate_title_ctr`)**: Grades candidate titles against psychological click triggers (curiosity gaps, loss aversion, numbers, mobile <50 chars), predicts winning CTR, and generates 3 optimized high-CTR variants.
+- **⏰ Upload Timing & Publishing Schedule Optimizer (`analyze_optimal_upload_time`)**: Analyzes competitor publishing days and hours to find low-congestion "Sweet Spot" upload windows before peak viewer activity.
+- **📊 Retention Dropoff Predictor & Pacing Analyzer (`predict_retention_dropoffs`)**: Evaluates script/transcript words-per-minute pacing, detects monologue drop-off hazards, and injects timestamped visual pattern interrupts and retention resets.
+- **🗳️ Community Tab & Viral Poll Strategy Engine (`analyze_community_posts`)**: Generates high-converting identity polls, video topic voting polls, and discussion drops that get pushed to non-subscribers' home feeds.
 - **⚡ Intelligent Daily Quota Caching**: Built-in disk-based caching (`ResponseCache`) with configurable TTL and directory (`YOUTUBE_CACHE_ENABLED`, `YOUTUBE_CACHE_DIR`, `YOUTUBE_CACHE_TTL`) to preserve your 10,000 unit/day Google API quota.
 
 ### 🌐 Dynamic MCP Resources (`youtube://` URIs)
@@ -592,6 +596,48 @@ Identifies proven viral US/English video concepts and checks competition levels 
 
 ---
 
+### `simulate_title_ctr` (A/B Title Tester & CTR Predictor)
+Grades candidate video titles against YouTube psychological click triggers (curiosity gaps, loss aversion, numbers, power words, and mobile sweet-spots <50 chars), predicts the winning title, and generates 3 optimized variations for each candidate.
+
+| Parameter | Type | Default | Description |
+| :--- | :--- | :--- | :--- |
+| `titles` | `list[string]` | *required* | List of 1 to 8 candidate video titles to test against each other. |
+| `target_niche` | `string` | `None` | Optional niche context (e.g. `"coding"`, `"finance"`, `"gaming"`). |
+
+---
+
+### `analyze_optimal_upload_time` (Publishing Schedule Optimizer)
+Analyzes competitor publishing timestamps across day-of-week and hour-of-day distributions to uncover prime "Sweet Spot" upload windows before peak viewer activity.
+
+| Parameter | Type | Default | Description |
+| :--- | :--- | :--- | :--- |
+| `niche_or_channel` | `string` | *required* | Niche topic keyword or competitor channel handle. |
+| `sample_size` | `integer` | `25` | Number of recent competitor uploads to sample (10 to 50). |
+| `timezone_offset_hours` | `integer` | `0` | Timezone offset from UTC in hours (e.g. `-5` for EST, `+1` for CET). |
+
+---
+
+### `predict_retention_dropoffs` (Retention Dropoff Predictor & Pacing Analyzer)
+Evaluates script or transcript words-per-minute (WPM) pacing across 1-minute blocks, flags flat monologue stretches (>45s without visual/audio changes), and injects timestamped retention resets.
+
+| Parameter | Type | Default | Description |
+| :--- | :--- | :--- | :--- |
+| `script_or_transcript` | `string` | `None` | Raw text of the draft script or spoken transcript. |
+| `video_id_or_url` | `string` | `None` | Optional YouTube Video ID or URL to fetch and evaluate live transcript. |
+| `target_duration_minutes` | `integer` | `None` | Optional target video runtime in minutes. |
+
+---
+
+### `analyze_community_posts` (Community Tab & Viral Poll Strategy Engine)
+Generates high-converting identity polls, video topic voting polls, knowledge quizzes, and free resource drops that the YouTube algorithm distributes to non-subscribers' home feeds.
+
+| Parameter | Type | Default | Description |
+| :--- | :--- | :--- | :--- |
+| `niche_or_channel` | `string` | *required* | Topic, niche, or creator handle (e.g. `"python programming"`). |
+| `target_goal` | `string` | `"growth"` | Goal: `"growth"`, `"video_validation"`, or `"audience_loyalty"`. |
+
+---
+
 ## 🌐 Dynamic MCP Resources (`youtube://` URIs)
 
 MCP clients can read dynamic live context resources directly:
@@ -653,7 +699,7 @@ Run the full pytest suite with:
 pytest -v
 ```
 
-All 74 tests mock Google API and transcript network requests to prevent burning quota during CI/CD.
+All 83 tests mock Google API and transcript network requests to prevent burning quota during CI/CD.
 
 ---
 

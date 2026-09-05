@@ -826,6 +826,88 @@ def test_client_search_caching(tmp_path):
     assert mock_execute.call_count == 1  # Still 1!
 
 
+def test_simulate_title_ctr():
+    client = YouTubeClient(api_key="test_key")
+
+    titles = [
+        "How to Learn Python",
+        "Stop Learning Python Like This (The 30-Day Blueprint)",
+        "A Extremely Long Title That Will Definitely Get Truncated On Any Mobile Device Screen Because It Exceeds 80 Characters In Length",
+    ]
+
+    res = client.simulate_title_ctr(titles=titles, target_niche="coding")
+    assert res["success"] is True
+    assert res["total_titles_tested"] == 3
+    assert res["predicted_winner"]["title"] == "Stop Learning Python Like This (The 30-Day Blueprint)"
+    assert res["predicted_winner"]["ctr_score"] >= 80
+    assert len(res["detailed_title_evaluations"]) == 3
+    # Check optimized variants were generated
+    assert len(res["detailed_title_evaluations"][0]["optimized_high_ctr_variants"]) == 3
+
+
+def test_analyze_optimal_upload_time():
+    client = YouTubeClient(api_key="test_key")
+
+    mock_search = {
+        "success": True,
+        "results": [
+            {"published_at": "2026-03-05T14:30:00Z"},  # Thursday 14:30 UTC
+            {"published_at": "2026-03-05T15:00:00Z"},  # Thursday 15:00 UTC
+            {"published_at": "2026-03-03T13:00:00Z"},  # Tuesday 13:00 UTC
+        ],
+    }
+
+    with patch.object(client, "search", return_value=mock_search):
+        res = client.analyze_optimal_upload_time(niche_or_channel="coding", sample_size=10, timezone_offset_hours=-5)
+        assert res["success"] is True
+        assert res["competitor_videos_analyzed"] == 3
+        assert "Thursday" in [d["day"] for d in res["publishing_day_distribution"]]
+        assert len(res["recommended_optimal_upload_slots"]) == 3
+        assert len(res["algorithm_timing_playbook"]) == 3
+
+
+def test_predict_retention_dropoffs():
+    client = YouTubeClient(api_key="test_key")
+
+    # 350 words of test script
+    script = ("Welcome to this complete guide. Today we are discussing python programming. " * 35)
+
+    res = client.predict_retention_dropoffs(script_or_transcript=script, target_duration_minutes=3)
+    assert res["success"] is True
+    assert res["total_words_analyzed"] > 300
+    assert len(res["pacing_segments"]) >= 2
+    assert "retention_health_score" in res
+    assert len(res["retention_engineering_playbook"]) == 3
+
+
+def test_predict_retention_dropoffs_from_video_id():
+    client = YouTubeClient(api_key="test_key")
+
+    mock_tr = {
+        "success": True,
+        "content": "Why does everyone fail at starting a YouTube channel? In this video, I will show you why.",
+    }
+
+    with patch("youtube_mcp.client.fetch_transcript", return_value=mock_tr):
+        res = client.predict_retention_dropoffs(video_id_or_url="dQw4w9WgXcQ")
+        assert res["success"] is True
+        assert res["source"] == "youtube_video_dQw4w9WgXcQ"
+        assert len(res["pacing_segments"]) == 1
+
+
+def test_analyze_community_posts():
+    client = YouTubeClient(api_key="test_key")
+
+    res = client.analyze_community_posts(niche_or_channel="ai automation", target_goal="growth")
+    assert res["success"] is True
+    assert res["niche_or_channel"] == "ai automation"
+    assert len(res["ready_to_use_community_templates"]) == 4
+    assert res["ready_to_use_community_templates"][0]["framework_name"] == "The Instant-Identity Poll (Maximum Viral Reach)"
+    assert len(res["ready_to_use_community_templates"][0]["options"]) == 4
+    assert len(res["conversion_tips"]) == 3
+
+
+
 
 
 

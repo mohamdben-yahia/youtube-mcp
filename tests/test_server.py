@@ -44,6 +44,10 @@ async def test_server_tools_registered():
         "generate_seo_metadata_pack",
         "export_research_report",
         "find_cross_language_opportunities",
+        "simulate_title_ctr",
+        "analyze_optimal_upload_time",
+        "predict_retention_dropoffs",
+        "analyze_community_posts",
     }
     assert expected_tools.issubset(tool_names)
 
@@ -447,6 +451,68 @@ def test_find_cross_language_opportunities_tool(mock_get_client):
         target_language="es",
         target_region="ES",
         max_results=3,
+    )
+
+
+@patch("youtube_mcp.server.get_client")
+def test_simulate_title_ctr_tool(mock_get_client):
+    from youtube_mcp.server import simulate_title_ctr
+    mock_client = MagicMock()
+    mock_client.simulate_title_ctr.return_value = {"success": True, "predicted_winner": {}}
+    mock_get_client.return_value = mock_client
+
+    res = simulate_title_ctr(titles=["Title 1", "Title 2"], target_niche="tech")
+    assert res["success"] is True
+    mock_client.simulate_title_ctr.assert_called_once_with(
+        titles=["Title 1", "Title 2"],
+        target_niche="tech",
+    )
+
+
+@patch("youtube_mcp.server.get_client")
+def test_analyze_optimal_upload_time_tool(mock_get_client):
+    from youtube_mcp.server import analyze_optimal_upload_time
+    mock_client = MagicMock()
+    mock_client.analyze_optimal_upload_time.return_value = {"success": True, "recommended_optimal_upload_slots": []}
+    mock_get_client.return_value = mock_client
+
+    res = analyze_optimal_upload_time(niche_or_channel="coding", sample_size=20, timezone_offset_hours=-5)
+    assert res["success"] is True
+    mock_client.analyze_optimal_upload_time.assert_called_once_with(
+        niche_or_channel="coding",
+        sample_size=20,
+        timezone_offset_hours=-5,
+    )
+
+
+@patch("youtube_mcp.server.get_client")
+def test_predict_retention_dropoffs_tool(mock_get_client):
+    from youtube_mcp.server import predict_retention_dropoffs
+    mock_client = MagicMock()
+    mock_client.predict_retention_dropoffs.return_value = {"success": True, "retention_health_score": "85/100"}
+    mock_get_client.return_value = mock_client
+
+    res = predict_retention_dropoffs(script_or_transcript="Hello world, this is a test script.", target_duration_minutes=5)
+    assert res["success"] is True
+    mock_client.predict_retention_dropoffs.assert_called_once_with(
+        script_or_transcript="Hello world, this is a test script.",
+        video_id_or_url=None,
+        target_duration_minutes=5,
+    )
+
+
+@patch("youtube_mcp.server.get_client")
+def test_analyze_community_posts_tool(mock_get_client):
+    from youtube_mcp.server import analyze_community_posts
+    mock_client = MagicMock()
+    mock_client.analyze_community_posts.return_value = {"success": True, "ready_to_use_community_templates": []}
+    mock_get_client.return_value = mock_client
+
+    res = analyze_community_posts(niche_or_channel="productivity", target_goal="growth")
+    assert res["success"] is True
+    mock_client.analyze_community_posts.assert_called_once_with(
+        niche_or_channel="productivity",
+        target_goal="growth",
     )
 
 
