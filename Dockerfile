@@ -29,6 +29,7 @@ COPY pyproject.toml .
 
 # Set environment
 ENV PATH="/app/.venv/bin:$PATH"
+ENV PYTHONPATH="/app/src"
 ENV PYTHONUNBUFFERED=1
 
 # Expose SSE HTTP port
