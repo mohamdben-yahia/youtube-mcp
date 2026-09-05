@@ -224,12 +224,12 @@ Exposes live context documents directly to LLMs:
 To automatically install and configure YouTube MCP Server for Claude Desktop via [Smithery](https://smithery.ai):
 
 ```bash
-npx -y @smithery/cli install @mohamdben-yahia/youtube-mcp --client claude
+npx -y @smithery/cli install youtube-mcp --client claude
 ```
 
-### 2. Run with `uvx` (Instant Execution)
+### 2. Instant Run with `uvx` (No Install Needed)
 
-You can run the server directly without manual installation using `uvx`:
+Run the server directly anywhere in 1 second using `uvx`:
 
 ```bash
 # Single API Key
@@ -238,10 +238,17 @@ export YOUTUBE_API_KEY="your_api_key_here"
 # Or Multi-Key Pool (automatic quota failover)
 export YOUTUBE_API_KEYS="key_1,key_2,key_3"
 
-uvx --from . youtube-mcp
+uvx youtube-mcp
 ```
 
-### 3. Local Installation & Development
+### 3. Install via `pip`
+
+```bash
+pip install youtube-mcp
+youtube-mcp
+```
+
+### 4. Local Development (Clone from Source)
 
 ```bash
 # Clone and enter directory
@@ -255,7 +262,6 @@ uv pip install -e ".[dev]"
 
 # Copy environment template and configure key
 cp .env.example .env
-# Edit .env and set your YOUTUBE_API_KEY or YOUTUBE_API_KEYS
 ```
 
 Run locally:
@@ -277,6 +283,22 @@ Add the following to your Claude Desktop configuration file:
 - **macOS**: `~/Library/Application Support/Claude/claude_desktop_config.json`
 - **Windows**: `%APPDATA%\Claude\claude_desktop_config.json`
 
+#### Option A: Direct Execution via `uvx` (Recommended — No clone required)
+```json
+{
+  "mcpServers": {
+    "youtube": {
+      "command": "uvx",
+      "args": ["youtube-mcp"],
+      "env": {
+        "YOUTUBE_API_KEY": "YOUR_YOUTUBE_API_KEY"
+      }
+    }
+  }
+}
+```
+
+#### Option B: Local Source / Cloned Repo
 ```json
 {
   "mcpServers": {
@@ -304,13 +326,8 @@ Add to your project's `.cursor/mcp.json` or global MCP settings:
 {
   "mcpServers": {
     "youtube": {
-      "command": "uv",
-      "args": [
-        "--directory",
-        "/path/to/youtube-mcp",
-        "run",
-        "youtube-mcp"
-      ],
+      "command": "uvx",
+      "args": ["youtube-mcp"],
       "env": {
         "YOUTUBE_API_KEY": "YOUR_YOUTUBE_API_KEY"
       }
@@ -327,11 +344,8 @@ Add to `.agents/mcp_config.json` (or `~/.gemini/config/mcp_config.json`):
 {
   "mcpServers": {
     "youtube": {
-      "command": "/path/to/youtube-mcp/.venv/bin/python",
-      "args": [
-        "-m",
-        "youtube_mcp"
-      ],
+      "command": "uvx",
+      "args": ["youtube-mcp"],
       "env": {
         "YOUTUBE_API_KEY": "YOUR_YOUTUBE_API_KEY"
       }
